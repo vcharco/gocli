@@ -9,48 +9,48 @@ The CLI includes features such as autocompletion, suggestions, command history, 
 package main
 
 import (
-	"fmt"
+  "fmt"
 
-	"github.com/vcharco/gocli"
+  "github.com/vcharco/gocli"
 )
 
 func main() {
 
-	// Configuration
-	cli := gocli.Terminal{
-		Prompt:          "GOH> ",
-		Options:         []string{"bar", "foo", "clear-history", "print-history"},
-		HistoryId:       "main",
-		ExitMessage:     "Good bye baby!",
-		BypassCharacter: ":",
-	}
+  // Configuration
+  cli := gocli.Terminal{
+    Prompt:          "GOH> ",
+    Options:         []string{"bar", "foo", "clear-history", "print-history", "exit"},
+    HistoryId:       "main",
+    ExitMessage:     "Good bye baby!",
+    BypassCharacter: ":",
+  }
 
-	loop := true
-	for loop {
-		cmd, err := cli.Get()
+  loop := true
+  for loop {
+    cmd, err := cli.Get()
 
-		if err != nil {
-			fmt.Printf("something went wrong: %v\n", err)
-			break
-		}
+    if err != nil {
+      fmt.Printf("something went wrong: %v\n", err)
+      break
+    }
 
-		switch cmd {
-		case "foo":
-			// someFooLogicHere()
-		case "bar":
-			// someBarLogicHere()
-		case "clear-history":
-			cli.ClearHistory()
-		case "print-history":
-			cli.PrintHistory(20)
-		case "exit":
-			loop = false
-		case "":
-			// Special case: Executed OS command
-		default:
-			fmt.Println("Invalid command")
-		}
-	}
+    switch cmd {
+    case "bar":
+      // somebarLogicHere()
+    case "foo":
+      // someFooLogicHere()
+    case "clear-history":
+      cli.ClearHistory()
+    case "print-history":
+      cli.PrintHistory(20)
+    case "exit":
+      loop = false
+    case "":
+      // Special case: Executed OS command
+    default:
+      fmt.Println("Invalid command")
+    }
+  }
 }
 ```
 
