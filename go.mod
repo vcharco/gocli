@@ -1,4 +1,4 @@
-module gocli
+module github.com/vcharco/gocli
 
 go 1.23.1
 
