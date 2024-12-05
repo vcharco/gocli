@@ -7,7 +7,7 @@ import (
 	"strings"
 	"syscall"
 
-	g "gocli/internal"
+	g "github.com/vcharco/gocli/internal"
 
 	"golang.org/x/term"
 )
