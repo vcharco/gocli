@@ -30,7 +30,15 @@ func ValidateCommand(candidates []gt.Candidate, command string) (string, map[str
 	}
 
 	if len(words) == 1 {
+		err := checkRequiredParams(map[string]string{}, candidate.Options)
+		if err != nil {
+			return "", nil, err
+		}
 		return words[0], map[string]string{}, nil
+	}
+
+	if len(words) > 1 && len(candidate.Options) == 0 {
+		return "", nil, fmt.Errorf("parameters not supported for this command")
 	}
 
 	params, err := ValidateParams(candidate, words[1:])
@@ -58,7 +66,7 @@ func ValidateParams(candidate gt.Candidate, params []string) (map[string]string,
 		candidateOption, err := getCandidateOrError(params[i], candidate.Options)
 		if err != nil {
 			if !checkedDefaultParam {
-				err := ValidateType(candidateOption, params[i])
+				err := ValidateType(*defaultParam, params[i])
 				if err != nil {
 					return nil, err
 				}
