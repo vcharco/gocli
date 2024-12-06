@@ -18,11 +18,13 @@ func main() {
 
   // Configuration
   cli := gocli.Terminal{
-    Prompt:          "GOH> ",
-    Options:         []string{"bar", "foo", "clear-history", "print-history", "exit"},
-    HistoryId:       "main",
-    ExitMessage:     "Good bye baby!",
-    BypassCharacter: ":",
+    Prompt:                "GOH> ",
+    Options:               []string{"bar", "foo", "clear-history", "print-history", "exit"},
+    HistoryId:             "main",
+    ExitMessage:           "Have a nice day!",
+    BypassCharacter:       ":",
+    AllowInvalidCommands:  false,
+    InvalidCommandMessage: "Invalid command!",
   }
 
   loop := true
@@ -35,10 +37,10 @@ func main() {
     }
 
     switch cmd {
-    case "bar":
-      // somebarLogicHere()
     case "foo":
       // someFooLogicHere()
+    case "bar":
+      // someBarLogicHere()
     case "clear-history":
       cli.ClearHistory()
     case "print-history":
@@ -46,9 +48,9 @@ func main() {
     case "exit":
       loop = false
     case "":
-      // Special case: Executed OS command
+      // Command by OS or invalid command with AllowInvalidCommands=false
     default:
-      fmt.Println("Invalid command")
+      // Not reachable because AllowInvalidCommands is set to false
     }
   }
 }
@@ -62,7 +64,9 @@ func main() {
 - `ExitMessage`: Message prompted when user press CTRL+C
 - `BypassCharacter`: Gocli checks if the input starts with this character, and in that case, instead of processing it, it sends it directly to the operating system's console. This allows you to execute OS commands without leaving Gocli.
   - Example for BypassCharacter `!`: `Prompt> !ls -l`
+- `AllowInvalidCommands`: If this property is set to false (default), only commands included in the Options property are accepted. If the command is followed by parameters separated by spaces, it is considered valid, as only the command itself is checked. Otherwise, if the property is set to true, the command is returned regardless of whether it is valid.
+- `InvalidCommandMessage`: This message is displayed when an invalid command is executed and the AllowInvalidCommands property is set to false.
 
 ## Special outputs
 
-Gocli always returns the command typed by the user (with autocompletion applied) or an error if something goes wrong (though this should never happen). The only exception is when an OS command is executed (indicated by the BypassCharacter). In this case, it returns an empty string.
+Gocli always returns the command typed by the user (with autocompletion applied) or an error if something goes wrong (though this should never happen). The only exceptions are when an OS command is executed (indicated by the BypassCharacter), or when a command is invalid and the AllowInvalidCommands property is set to false (default). In these cases, it returns an empty string.
