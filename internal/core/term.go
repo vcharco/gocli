@@ -167,7 +167,12 @@ func (t *Terminal) Get() TerminalResponse {
 		if input >= 32 && input < 127 {
 			userInput = userInput[:t.cursorPos] + string(input) + userInput[t.cursorPos:]
 			t.cursorPos++
-			fmt.Print(string(input))
+			if t.cursorPos < len(userInput) {
+				t.cleanLine()
+				fmt.Print(userInput)
+			} else {
+				fmt.Print(string(input))
+			}
 		}
 
 		t.cleanNextLine()
