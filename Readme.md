@@ -20,7 +20,6 @@ func main() {
   cli := gocli.Terminal{
     Prompt:                "GOH> ",
     Options:               []string{"bar", "foo", "clear-history", "print-history", "exit"},
-    HistoryId:             "main",
     ExitMessage:           "Have a nice day!",
     BypassCharacter:       ":",
     AllowInvalidCommands:  false,
@@ -60,7 +59,6 @@ func main() {
 
 - `Prompt`: This is the text at the beggining of the line.
 - `Options`: This list of options is used for autocompletion and suggestions.
-- `HistoryId`: This can be any identifier. CLIs that share the same identifier also share the same command history.
 - `ExitMessage`: Message prompted when user press CTRL+C
 - `BypassCharacter`: Gocli checks if the input starts with this character, and in that case, instead of processing it, it sends it directly to the operating system's console. This allows you to execute OS commands without leaving Gocli.
   - Example for BypassCharacter `!`: `Prompt> !ls -l`

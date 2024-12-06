@@ -15,21 +15,21 @@ import (
 type Terminal struct {
 	Prompt                string
 	Options               []string
-	HistoryId             string
 	ExitMessage           string
 	InvalidCommandMessage string
 	BypassCharacter       string
 	AllowInvalidCommands  bool
 	cursorPos             int
+	commandHistory        *g.CommandHistory
 }
 
 func (t *Terminal) Get() (string, error) {
 
-	if len(t.HistoryId) == 0 {
-		t.HistoryId = "default"
+	if t.commandHistory == nil {
+		t.commandHistory = &g.CommandHistory{Commands: []string{}, CurrentIndex: 0, Cache: "", IsCacheActive: false}
 	}
-	history := g.GetCommandHistory(t.HistoryId)
-	history.ResetIndex()
+
+	t.commandHistory.ResetIndex()
 
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
@@ -59,13 +59,13 @@ func (t *Terminal) Get() (string, error) {
 		if len(userInput) > 0 && (input == 10 || input == 13) {
 			if len(t.BypassCharacter) == 1 && strings.HasPrefix(userInput, t.BypassCharacter) {
 				term.Restore(int(os.Stdin.Fd()), oldState)
-				history.Append(userInput)
+				t.commandHistory.Append(userInput)
 				g.ExecCmd(userInput[1:])
 				return "", nil
 			}
 
 			bestMatch := g.BestMatch(userInput, t.Options)
-			history.Append(bestMatch)
+			t.commandHistory.Append(bestMatch)
 
 			if !t.AllowInvalidCommands && !t.IsCommandExists(bestMatch) {
 				term.Restore(int(os.Stdin.Fd()), oldState)
@@ -110,7 +110,7 @@ func (t *Terminal) Get() (string, error) {
 		// Clean Screen CTRL+L
 		if input == 12 {
 			fmt.Print("\033[H\033[2J")
-			fmt.Print(g.Colorize(g.Cyan, "%v"), t.Prompt)
+			fmt.Printf(g.Colorize(g.Cyan, "%v"), t.Prompt)
 			continue
 		}
 
@@ -139,13 +139,13 @@ func (t *Terminal) Get() (string, error) {
 				}
 			}
 			if buf[2] == 65 {
-				str, err := history.GetPrev(userInput)
+				str, err := t.commandHistory.GetPrev(userInput)
 				if err == nil {
 					t.replaceLine(&userInput, str)
 				}
 			}
 			if buf[2] == 66 {
-				str, err := history.GetNext()
+				str, err := t.commandHistory.GetNext()
 				if err == nil {
 					t.replaceLine(&userInput, str)
 				}
@@ -216,15 +216,15 @@ func (t *Terminal) moveCursorToPosIgnorePrompt(pos int) {
 }
 
 func (t *Terminal) PrintHistory(limit int) {
-	g.GetCommandHistory(t.HistoryId).PrintHistory(limit)
+	t.commandHistory.PrintHistory(limit)
 }
 
 func (t *Terminal) CountHistory() int {
-	return g.GetCommandHistory(t.HistoryId).Count()
+	return t.commandHistory.Count()
 }
 
 func (t *Terminal) ClearHistory() {
-	g.GetCommandHistory(t.HistoryId).Clear()
+	t.commandHistory.Clear()
 }
 
 func (t *Terminal) IsCommandExists(str string) bool {
