@@ -17,13 +17,22 @@ const (
 	UUID
 )
 
+type CandidateOptionModifier int
+
+const (
+	DEFAULT CandidateOptionModifier = 1 << iota
+	REQUIRED
+)
+
 type Candidate struct {
-	Name              string
-	DefaultOptionType CandidateType
-	Options           []CandidateOption
+	Name        string
+	Description string
+	Options     []CandidateOption
 }
 
 type CandidateOption struct {
-	Name string
-	Type CandidateType
+	Name        string
+	Description string
+	Modifier    CandidateOptionModifier
+	Type        CandidateType
 }

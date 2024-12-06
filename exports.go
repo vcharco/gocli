@@ -9,6 +9,7 @@ type Terminal = gg.Terminal
 type TerminalResponseType = gg.TerminalResponseType
 type Candidate = gt.Candidate
 type CandidateOption = gt.CandidateOption
+type CandidateOptionModifier = gt.CandidateOptionModifier
 type CandidateType = gt.CandidateType
 
 const (
@@ -31,4 +32,9 @@ const (
 	CmdError       = gg.CmdError
 	ParamError     = gg.ParamError
 	ExecutionError = gg.ExecutionError
+)
+
+const (
+	DEFAULT  = gt.DEFAULT
+	REQUIRED = gt.REQUIRED
 )

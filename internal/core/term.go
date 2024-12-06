@@ -76,6 +76,7 @@ func (t *Terminal) Get() TerminalResponse {
 			if len(t.BypassCharacter) > 0 && strings.HasPrefix(userInput, t.BypassCharacter) {
 				term.Restore(int(os.Stdin.Fd()), oldState)
 				t.commandHistory.Append(userInput)
+				fmt.Println()
 				gu.ExecCmd(userInput[len(t.BypassCharacter):])
 				return TerminalResponse{"", map[string]string{}, userInput[len(t.BypassCharacter):], OsCmd, nil}
 			}
@@ -83,7 +84,7 @@ func (t *Terminal) Get() TerminalResponse {
 			bestMatch := gu.BestMatch(userInput, t.Options)
 			t.commandHistory.Append(bestMatch)
 
-			validatedCommand, err := ValidateCommand(t.Options, bestMatch)
+			command, params, err := ValidateCommand(t.Options, bestMatch)
 
 			if err != nil {
 				return TerminalResponse{"", map[string]string{}, userInput, ParamError, err}
@@ -92,7 +93,7 @@ func (t *Terminal) Get() TerminalResponse {
 			t.replaceLine(&userInput, bestMatch)
 			t.cleanNextLineAndStay()
 
-			return TerminalResponse{"", validatedCommand, userInput, Cmd, nil}
+			return TerminalResponse{command, params, userInput, Cmd, nil}
 		}
 
 		// Exit CTRL+C
