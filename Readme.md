@@ -9,61 +9,109 @@ The CLI includes features such as autocompletion, suggestions, command history, 
 package main
 
 import (
-  "fmt"
+ "fmt"
+ "strconv"
 
-  "github.com/vcharco/gocli"
+ "github.com/vcharco/gocli"
 )
 
 func main() {
 
-  // Configuration
-  cli := gocli.Terminal{
-    Prompt:                "GOH> ",
-    Options:               []string{"bar", "foo", "clear-history", "print-history", "exit"},
-    ExitMessage:           "Have a nice day!",
-    BypassCharacter:       ":",
-    AllowInvalidCommands:  false,
-    InvalidCommandMessage: "Invalid command!",
+ options := []gocli.Candidate{
+  {Name: "foo", DefaultOptionType: gocli.Text, Options: []gocli.CandidateOption{
+   {Name: "-f"},
+   {Name: "--foo", Type: gocli.Text},
+  }},
+  {Name: "exit"},
+  {Name: "clear-history"},
+  {Name: "print-history", DefaultOptionType: gocli.Number},
+ }
+
+ // Configuration
+ cli := gocli.Terminal{
+  Prompt:               "GOH> ",
+  Options:              options,
+  ExitMessage:          "Have a nice day!",
+  BypassCharacter:      ":",
+ }
+
+ loop := true
+ for loop {
+  response := cli.Get()
+
+  // Checking response errors
+  if response.Error != nil {
+   switch response.Type {
+   case gocli.CmdError:
+    fmt.Printf("Invalid command: %v\n", response.Error.Error())
+   case gocli.ParamError:
+    fmt.Printf("Invalid parameters: %v\n", response.Error.Error())
+   case gocli.ExecutionError:
+    fmt.Printf("Internal error: %v\n", response.Error.Error())
+   }
   }
 
-  loop := true
-  for loop {
-    cmd, err := cli.Get()
+  // Command was successfully executed by cli
+  if response.Type == gocli.Cmd {
+   switch response.Command {
+   case "foo":
+    // This is how we get default value if defined a DefaultOptionType
+    fooDefault, existsFooDefault := response.Options["default"]
 
-    if err != nil {
-      fmt.Printf("something went wrong: %v\n", err)
-      break
+    // This is how we get a flag param (without type)
+    _, existsF := response.Options["-f"]
+
+    // This is how we get a param in the rest of the cases
+    fooVal, existsFoo := response.Options["--foo"]
+
+    // Default param is always retrieved if we set a DefaultOptionType
+    // else, we would get an error, so feel free to avoid this check
+    if existsFooDefault {
+     fmt.Println("The default value is " + fooDefault)
     }
 
-    switch cmd {
-    case "foo":
-      // someFooLogicHere()
-    case "bar":
-      // someBarLogicHere()
-    case "clear-history":
-      cli.ClearHistory()
-    case "print-history":
-      cli.PrintHistory(20)
-    case "exit":
-      loop = false
-    case "":
-      // Command by OS or invalid command with AllowInvalidCommands=false
-    default:
-      // Not reachable because AllowInvalidCommands is set to false
+    // For non default params, we must check if they are retrieved
+    if existsF {
+     fmt.Println("-f param is set")
     }
+
+    if existsFoo {
+     fmt.Printf("The value of --foo is %v\n", fooVal)
+    }
+
+   case "clear-history":
+    cli.ClearHistory()
+   case "print-history":
+    // For non Text type params, we may need a cast, but the format will
+    // be valid as they were been already checked by the cli
+    limit := 0
+    value, exists := response.Options["default"]
+    if exists {
+     limit, _ = strconv.Atoi(value)
+    }
+    cli.PrintHistory(limit)
+   case "exit":
+    loop = false
+   }
   }
+
+  // Command was executed by OS, but we can perform additional actions
+  if response.Type == gocli.OsCmd {
+   userInput := response.RawInput
+   fmt.Printf("Comman executed by the OS: %v", userInput)
+  }
+
+ }
 }
 ```
 
 ## Configuration options
 
 - `Prompt`: This is the text at the beggining of the line.
-- `Options`: This list of options is used for autocompletion and suggestions.
-- `ExitMessage`: Message prompted when user press CTRL+C
+- `Options`: This list of options is used for autocompletion and suggestions. It contains a sublist of valid parameters for each command.
 - `BypassCharacter`: Gocli checks if the input starts with this character, and in that case, instead of processing it, it sends it directly to the operating system's console. This allows you to execute OS commands without leaving Gocli.
   - Example for BypassCharacter `!`: `Prompt> !ls -l`
-- `AllowInvalidCommands`: If this property is set to false (default), only commands included in the Options property are accepted. If the command is followed by parameters separated by spaces, it is considered valid, as only the command itself is checked. Otherwise, if the property is set to true, the command is returned regardless of whether it is valid.
-- `InvalidCommandMessage`: This message is displayed when an invalid command is executed and the AllowInvalidCommands property is set to false.
+- `ExitMessage`: Prints a nice message when user exits pressing CTRL+C
 
 ## Special outputs
 

@@ -1,6 +1,8 @@
-package gocliutils
+package gocli
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type CommandHistory struct {
 	Commands      []string

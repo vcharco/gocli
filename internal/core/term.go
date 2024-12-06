@@ -7,33 +7,49 @@ import (
 	"strings"
 	"syscall"
 
-	g "github.com/vcharco/gocli/internal"
-
+	gt "github.com/vcharco/gocli/internal/types"
+	gu "github.com/vcharco/gocli/internal/utils"
 	"golang.org/x/term"
 )
 
 type Terminal struct {
-	Prompt                string
-	Options               []string
-	ExitMessage           string
-	InvalidCommandMessage string
-	BypassCharacter       string
-	AllowInvalidCommands  bool
-	cursorPos             int
-	commandHistory        *g.CommandHistory
+	Prompt          string
+	Options         []gt.Candidate
+	ExitMessage     string
+	BypassCharacter string
+	cursorPos       int
+	commandHistory  *CommandHistory
 }
 
-func (t *Terminal) Get() (string, error) {
+type TerminalResponseType int
+
+const (
+	Cmd TerminalResponseType = iota
+	OsCmd
+	CmdError
+	ParamError
+	ExecutionError
+)
+
+type TerminalResponse struct {
+	Command  string
+	Options  map[string]string
+	RawInput string
+	Type     TerminalResponseType
+	Error    error
+}
+
+func (t *Terminal) Get() TerminalResponse {
 
 	if t.commandHistory == nil {
-		t.commandHistory = &g.CommandHistory{Commands: []string{}, CurrentIndex: 0, Cache: "", IsCacheActive: false}
+		t.commandHistory = &CommandHistory{Commands: []string{}, CurrentIndex: 0, Cache: "", IsCacheActive: false}
 	}
 
 	t.commandHistory.ResetIndex()
 
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
-		return "", fmt.Errorf("error switching to raw mode: %v", err)
+		return TerminalResponse{"", map[string]string{}, "", ExecutionError, err}
 	}
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
@@ -43,45 +59,40 @@ func (t *Terminal) Get() (string, error) {
 	var userInput string
 	t.cursorPos = 0
 
-	fmt.Printf(g.Colorize(g.Cyan, "%v"), t.Prompt)
+	fmt.Printf(gu.Colorize(gu.Cyan, "%v"), t.Prompt)
 	t.cleanNextLine()
 
 	for {
 		buf := make([]byte, 3)
 		_, err := os.Stdin.Read(buf)
 		if err != nil {
-			return "", fmt.Errorf("error reading input: %v", err)
+			return TerminalResponse{"", map[string]string{}, "", ExecutionError, err}
 		}
 
 		input := buf[0]
 
 		// Enter
 		if len(userInput) > 0 && (input == 10 || input == 13) {
-			if len(t.BypassCharacter) == 1 && strings.HasPrefix(userInput, t.BypassCharacter) {
+			if len(t.BypassCharacter) > 0 && strings.HasPrefix(userInput, t.BypassCharacter) {
 				term.Restore(int(os.Stdin.Fd()), oldState)
 				t.commandHistory.Append(userInput)
-				g.ExecCmd(userInput[1:])
-				return "", nil
+				gu.ExecCmd(userInput[len(t.BypassCharacter):])
+				return TerminalResponse{"", map[string]string{}, userInput[len(t.BypassCharacter):], OsCmd, nil}
 			}
 
-			bestMatch := g.BestMatch(userInput, t.Options)
+			bestMatch := gu.BestMatch(userInput, t.Options)
 			t.commandHistory.Append(bestMatch)
 
-			if !t.AllowInvalidCommands && !t.IsCommandExists(bestMatch) {
-				term.Restore(int(os.Stdin.Fd()), oldState)
-				invalidCommandMessage := t.InvalidCommandMessage
-				if len(invalidCommandMessage) == 0 {
-					invalidCommandMessage = "Invalid command"
-				}
-				fmt.Println()
-				fmt.Println(g.Colorize(g.Red, t.InvalidCommandMessage))
-				return "", nil
+			validatedCommand, err := ValidateCommand(t.Options, bestMatch)
+
+			if err != nil {
+				return TerminalResponse{"", map[string]string{}, userInput, ParamError, err}
 			}
 
 			t.replaceLine(&userInput, bestMatch)
 			t.cleanNextLineAndStay()
 
-			return userInput, nil
+			return TerminalResponse{"", validatedCommand, userInput, Cmd, nil}
 		}
 
 		// Exit CTRL+C
@@ -90,7 +101,7 @@ func (t *Terminal) Get() (string, error) {
 			fmt.Println()
 			if len(t.ExitMessage) > 0 {
 				fmt.Println()
-				fmt.Print(g.Colorize(g.Green, t.ExitMessage))
+				fmt.Print(gu.Colorize(gu.Green, t.ExitMessage))
 				fmt.Print("\n\n")
 			}
 			os.Exit(0)
@@ -98,7 +109,7 @@ func (t *Terminal) Get() (string, error) {
 
 		// Autocomplete TAB
 		if input == 9 {
-			bestMatch := g.BestMatch(userInput, t.Options)
+			bestMatch := gu.BestMatch(userInput, t.Options)
 			if userInput == bestMatch {
 				t.printAutocompleteSuggestions(userInput)
 			} else {
@@ -110,7 +121,7 @@ func (t *Terminal) Get() (string, error) {
 		// Clean Screen CTRL+L
 		if input == 12 {
 			fmt.Print("\033[H\033[2J")
-			fmt.Printf(g.Colorize(g.Cyan, "%v"), t.Prompt)
+			fmt.Printf(gu.Colorize(gu.Cyan, "%v"), t.Prompt)
 			continue
 		}
 
@@ -182,9 +193,9 @@ func (t *Terminal) printAutocompleteSuggestions(userInput string) {
 
 func (t *Terminal) filterStrings(prefix string) []string {
 	var result []string
-	for _, str := range t.Options {
-		if strings.HasPrefix(str, prefix) && str != prefix {
-			result = append(result, str)
+	for _, candidate := range t.Options {
+		if strings.HasPrefix(candidate.Name, prefix) && candidate.Name != prefix {
+			result = append(result, candidate.Name)
 		}
 	}
 	return result
@@ -228,8 +239,8 @@ func (t *Terminal) ClearHistory() {
 }
 
 func (t *Terminal) IsCommandExists(str string) bool {
-	for _, v := range t.Options {
-		if v == str || strings.HasPrefix(str, v+" ") {
+	for _, candidate := range t.Options {
+		if candidate.Name == str || strings.HasPrefix(str, candidate.Name+" ") {
 			return true
 		}
 	}

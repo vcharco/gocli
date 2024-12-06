@@ -1,16 +1,20 @@
 package gocliutils
 
-import "strings"
+import (
+	"strings"
 
-func BestMatch(userOption string, options []string) string {
+	gt "github.com/vcharco/gocli/internal/types"
+)
+
+func BestMatch(userOption string, options []gt.Candidate) string {
 	if userOption == "" {
 		return ""
 	}
 
 	var filteredOptions []string
 	for _, option := range options {
-		if strings.HasPrefix(option, userOption) {
-			filteredOptions = append(filteredOptions, option)
+		if strings.HasPrefix(option.Name, userOption) {
+			filteredOptions = append(filteredOptions, option.Name)
 		}
 	}
 
