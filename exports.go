@@ -6,6 +6,7 @@ import (
 )
 
 type Terminal = gg.Terminal
+type TerminalResponse = gg.TerminalResponse
 type TerminalResponseType = gg.TerminalResponseType
 type Candidate = gt.Candidate
 type CandidateOption = gt.CandidateOption
