@@ -13,11 +13,14 @@ import (
 )
 
 type Terminal struct {
-	Prompt          string
-	Options         []string
-	HistoryId       string
-	ExitMessage     string
-	BypassCharacter string
+	Prompt                string
+	Options               []string
+	HistoryId             string
+	ExitMessage           string
+	InvalidCommandMessage string
+	BypassCharacter       string
+	AllowInvalidCommands  bool
+	cursorPos             int
 }
 
 func (t *Terminal) Get() (string, error) {
@@ -38,10 +41,10 @@ func (t *Terminal) Get() (string, error) {
 	signal.Notify(signalChan, syscall.SIGINT)
 
 	var userInput string
-	cursorPos := 0
+	t.cursorPos = 0
 
-	t.Prompt = fmt.Sprintf(g.Colorize(g.Cyan, "%v"), t.Prompt)
-	fmt.Print(t.Prompt)
+	fmt.Printf(g.Colorize(g.Cyan, "%v"), t.Prompt)
+	t.cleanNextLine()
 
 	for {
 		buf := make([]byte, 3)
@@ -54,21 +57,42 @@ func (t *Terminal) Get() (string, error) {
 
 		// Enter
 		if len(userInput) > 0 && (input == 10 || input == 13) {
-			bestMatch := g.BestMatch(userInput, t.Options)
-			t.replaceLine(&cursorPos, &userInput, bestMatch)
-			history.Append(userInput)
-			t.cleanNextLineAndStay()
 			if len(t.BypassCharacter) == 1 && strings.HasPrefix(userInput, t.BypassCharacter) {
-				g.ExecCmd(userInput)
+				term.Restore(int(os.Stdin.Fd()), oldState)
+				history.Append(userInput)
+				g.ExecCmd(userInput[1:])
 				return "", nil
 			}
+
+			bestMatch := g.BestMatch(userInput, t.Options)
+			history.Append(bestMatch)
+
+			if !t.AllowInvalidCommands && !t.IsCommandExists(bestMatch) {
+				term.Restore(int(os.Stdin.Fd()), oldState)
+				invalidCommandMessage := t.InvalidCommandMessage
+				if len(invalidCommandMessage) == 0 {
+					invalidCommandMessage = "Invalid command"
+				}
+				fmt.Println()
+				fmt.Println(g.Colorize(g.Red, t.InvalidCommandMessage))
+				return "", nil
+			}
+
+			t.replaceLine(&userInput, bestMatch)
+			t.cleanNextLineAndStay()
+
 			return userInput, nil
 		}
 
 		// Exit CTRL+C
 		if input == 3 {
-			t.cleanNextLineAndStay()
-			fmt.Println(g.Colorize(g.Green, t.ExitMessage))
+			term.Restore(int(os.Stdin.Fd()), oldState)
+			fmt.Println()
+			if len(t.ExitMessage) > 0 {
+				fmt.Println()
+				fmt.Print(g.Colorize(g.Green, t.ExitMessage))
+				fmt.Print("\n\n")
+			}
 			os.Exit(0)
 		}
 
@@ -76,9 +100,9 @@ func (t *Terminal) Get() (string, error) {
 		if input == 9 {
 			bestMatch := g.BestMatch(userInput, t.Options)
 			if userInput == bestMatch {
-				t.printAutocompleteSuggestions(userInput, cursorPos)
+				t.printAutocompleteSuggestions(userInput)
 			} else {
-				t.replaceLine(&cursorPos, &userInput, bestMatch)
+				t.replaceLine(&userInput, bestMatch)
 			}
 			continue
 		}
@@ -86,15 +110,15 @@ func (t *Terminal) Get() (string, error) {
 		// Clean Screen CTRL+L
 		if input == 12 {
 			fmt.Print("\033[H\033[2J")
-			fmt.Print(t.Prompt)
+			fmt.Print(g.Colorize(g.Cyan, "%v"), t.Prompt)
 			continue
 		}
 
 		// Backspace
 		if input == 127 {
-			if cursorPos > 0 {
-				userInput = userInput[:cursorPos-1] + userInput[cursorPos:]
-				cursorPos--
+			if t.cursorPos > 0 {
+				userInput = userInput[:t.cursorPos-1] + userInput[t.cursorPos:]
+				t.cursorPos--
 				t.cleanLine()
 				fmt.Print(userInput)
 			}
@@ -103,57 +127,57 @@ func (t *Terminal) Get() (string, error) {
 		// Arrows
 		if input == 27 && len(buf) >= 3 && buf[1] == 91 {
 			if buf[2] == 68 {
-				if cursorPos > 0 {
-					cursorPos--
+				if t.cursorPos > 0 {
+					t.cursorPos--
 					fmt.Print("\033[1D")
 				}
 			}
 			if buf[2] == 67 {
-				if cursorPos < len(userInput) {
-					cursorPos++
+				if t.cursorPos < len(userInput) {
+					t.cursorPos++
 					fmt.Print("\033[1C")
 				}
 			}
 			if buf[2] == 65 {
 				str, err := history.GetPrev(userInput)
 				if err == nil {
-					t.replaceLine(&cursorPos, &userInput, str)
+					t.replaceLine(&userInput, str)
 				}
 			}
 			if buf[2] == 66 {
 				str, err := history.GetNext()
 				if err == nil {
-					t.replaceLine(&cursorPos, &userInput, str)
+					t.replaceLine(&userInput, str)
 				}
 			}
 		}
 
 		if input >= 32 && input < 127 {
-			userInput = userInput[:cursorPos] + string(input) + userInput[cursorPos:]
-			cursorPos++
+			userInput = userInput[:t.cursorPos] + string(input) + userInput[t.cursorPos:]
+			t.cursorPos++
 			fmt.Print(string(input))
 		}
 
-		t.cleanNextLine(cursorPos)
-		t.moveCursorToPos(cursorPos)
+		t.cleanNextLine()
+		t.moveCursorToPos(t.cursorPos)
 	}
 
 }
 
-func (t *Terminal) replaceLine(pos *int, userInput *string, text string) {
+func (t *Terminal) replaceLine(userInput *string, text string) {
 	t.cleanLine()
 	fmt.Print(text)
 	t.moveCursorToPos(len(text))
-	*pos = len(text)
+	t.cursorPos = len(text)
 	*userInput = text
 }
 
-func (t *Terminal) printAutocompleteSuggestions(userInput string, pos int) {
+func (t *Terminal) printAutocompleteSuggestions(userInput string) {
 	t.cleanNextLineAndStay()
 	fmt.Print(strings.Join(t.filterStrings(userInput), "  "))
 	fmt.Print("\033[K")
 	fmt.Print("\033[1A")
-	t.moveCursorToPos(pos)
+	t.moveCursorToPos(t.cursorPos)
 }
 
 func (t *Terminal) filterStrings(prefix string) []string {
@@ -171,10 +195,10 @@ func (t *Terminal) cleanLine() {
 	fmt.Print("\033[K")
 }
 
-func (t *Terminal) cleanNextLine(pos int) {
+func (t *Terminal) cleanNextLine() {
 	t.cleanNextLineAndStay()
 	fmt.Print("\033[1A")
-	t.moveCursorToPos(pos)
+	t.moveCursorToPos(t.cursorPos)
 }
 
 func (t *Terminal) cleanNextLineAndStay() {
@@ -184,7 +208,7 @@ func (t *Terminal) cleanNextLineAndStay() {
 }
 
 func (t *Terminal) moveCursorToPos(pos int) {
-	fmt.Printf("\033[%dG", pos+len(t.Prompt)+1-9)
+	fmt.Printf("\033[%dG", pos+len(t.Prompt)+1)
 }
 
 func (t *Terminal) moveCursorToPosIgnorePrompt(pos int) {
@@ -201,4 +225,13 @@ func (t *Terminal) CountHistory() int {
 
 func (t *Terminal) ClearHistory() {
 	g.GetCommandHistory(t.HistoryId).Clear()
+}
+
+func (t *Terminal) IsCommandExists(str string) bool {
+	for _, v := range t.Options {
+		if v == str || strings.HasPrefix(str, v+" ") {
+			return true
+		}
+	}
+	return false
 }
