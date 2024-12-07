@@ -227,3 +227,16 @@ type TerminalResponse struct {
 - `CmdError`: Error validating the command
 - `ParamError`: Error validating some parameter
 - `ExecutionError`: Internal error, should not happen
+
+# Extra
+
+There are two special characters.
+
+- `BypassCharacter`: This character must be declared in order to bypass commands to the OS terminal. Let's say we set this charcter to `:`.
+  - `CLI> :ls -l`
+  - `CLI> :whoami`
+  - `CLI> :grep root /etc/passwd`
+- `?`: This is a special character for displaying help. Its usage is simple, type this character after a command or while you type the command and then press Enter. If this character is detected at the end of the input, the terminal will recognize the command and will display all available information like required and non required params, flags, default params and, of course, all the descriptions provided when we declared the Options.
+  - `CLI> print-history?`: It displays the help for the command `print-history`.
+  - `CLI> print-hi?` : We don't need to end the command if there are no conflicts with other commands.
+  - `CLI> print-history 20 ?`: We may display the command help even if we have already type parameters.
