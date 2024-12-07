@@ -7,43 +7,66 @@ import (
 	"strings"
 
 	gt "github.com/vcharco/gocli/internal/types"
+	gu "github.com/vcharco/gocli/internal/utils"
 )
 
-func ValidateCommand(candidates []gt.Candidate, command string) (string, map[string]string, error) {
-
+func GetClosestCommand(candidates []gt.Candidate, command string) (gt.Candidate, error) {
 	words := strings.Fields(command)
 
 	if len(words) == 0 {
-		return "", nil, fmt.Errorf("empty command")
+		return gt.Candidate{}, fmt.Errorf("empty command")
 	}
 
 	candidate := gt.Candidate{Name: "", Options: []gt.CandidateOption{}}
 	for _, cmd := range candidates {
-		if cmd.Name == words[0] {
+		if cmd.Name == gu.BestMatch(words[0], candidates) {
 			candidate = cmd
 			break
 		}
 	}
 
 	if len(candidate.Name) == 0 {
-		return "", nil, fmt.Errorf("invalid command")
+		return gt.Candidate{}, fmt.Errorf("invalid command")
+	}
+
+	return candidate, nil
+}
+
+func ValidateCommand(candidates []gt.Candidate, command string) (gt.Candidate, map[string]string, error) {
+
+	words := strings.Fields(command)
+
+	if len(words) == 0 {
+		return gt.Candidate{}, nil, fmt.Errorf("empty command")
+	}
+
+	candidate := gt.Candidate{Name: "", Options: []gt.CandidateOption{}}
+	for _, cmd := range candidates {
+		if cmd.Name == gu.BestMatch(words[0], candidates) {
+			candidate = cmd
+			break
+		}
+	}
+
+	if len(candidate.Name) == 0 {
+		return gt.Candidate{}, nil, fmt.Errorf("invalid command")
 	}
 
 	if len(words) == 1 {
 		err := checkRequiredParams(map[string]string{}, candidate.Options)
 		if err != nil {
-			return "", nil, err
+			return gt.Candidate{}, nil, err
 		}
-		return words[0], map[string]string{}, nil
+		return candidate, map[string]string{}, nil
 	}
 
 	if len(words) > 1 && len(candidate.Options) == 0 {
-		return "", nil, fmt.Errorf("parameters not supported for this command")
+		return candidate, nil, fmt.Errorf("parameters not supported for this command")
 	}
 
 	params, err := ValidateParams(candidate, words[1:])
 
-	return candidate.Name, params, err
+	return candidate, params, err
 }
 
 func ValidateParams(candidate gt.Candidate, params []string) (map[string]string, error) {
@@ -220,4 +243,35 @@ func ValidateType(candidateOption gt.CandidateOption, param string) error {
 	default:
 		return fmt.Errorf("parameter %v has a unrecognized type", candidateOption.Name)
 	}
+}
+
+func GetValidationTypeName(val gt.CandidateType) string {
+	switch val {
+	case gt.None:
+		return "None"
+	case gt.Date:
+		return "Date"
+	case gt.Domain:
+		return "Domain"
+	case gt.Email:
+		return "Email"
+	case gt.Ipv4:
+		return "Ipv4"
+	case gt.Ipv6:
+		return "Ipv6"
+	case gt.Number:
+		return "Number"
+	case gt.Phone:
+		return "Phone"
+	case gt.Text:
+		return "Text"
+	case gt.Time:
+		return "Time"
+	case gt.Url:
+		return "Url"
+	case gt.UUID:
+		return "UUID"
+	}
+
+	return ""
 }

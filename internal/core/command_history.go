@@ -61,7 +61,7 @@ func (c *CommandHistory) Count() int {
 	return len(c.Commands)
 }
 
-func (c *CommandHistory) PrintHistory(limit int) {
+func (c *CommandHistory) Print(limit int) {
 	if limit == 0 || limit > len(c.Commands) {
 		limit = len(c.Commands)
 	}
