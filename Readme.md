@@ -70,11 +70,11 @@ if response.Type == gc.Cmd {
   switch response.Command {
     case "foo":
       // This is how we retrieve values. First is the name and then the default value
-      fooDefault := response.GetParam("fooDefault", "")
-      fooVal := response.GetParam("--foo", "foo default value")
+      fooDefault := response.GetParam("fooDefault", "").(string)
+      fooVal := response.GetParam("--foo", "foo default value").(string)
 
       // For flag params, default value must be a boolean. Normally set to false
-      fVal := response.GetParam("-f", false)
+      fVal := response.GetParam("-f", false).(bool)
 
       fmt.Printf("default: %v; -f: %v; --foo: %v\n", fooDefault, fVal, fooVal)
   }
@@ -171,7 +171,7 @@ if response.Type == gc.OsCmd {
 
 They are the commands available for your custom cli. Each command must be provided with a Name. Optionally, you may provide a list of parameters. If you set the Hidden attribute, the command still be valid, but won't be displayed in the suggestions when pressing tabulator.
 
-**Parameters** should be provided with a Name. You may provide a Type, this will validate if the value provided next to the parameter match the type or not. Several types are supported right now, see below. For Number or FloatNumber types, the casting is performed automatically, but you still need to make an assertion with .(int) or .(float64) as the returned type is an interface{} type. If no Type is specified, then it will be a boolean flag, which means that it cannot receive any value. If the property is present, value is true, else, false. Finally, you may add a modifier as a binary flag (that means that you hav to provide this values separated by a `|`).
+**Parameters** should be provided with a Name. You may provide a Type, this will validate if the value provided next to the parameter match the type or not. Several types are supported right now, see below. For Number or FloatNumber types, the casting is performed automatically. As the returned type is an interface{} type, you must make the assertions `.(string)`, `.(int)`, `.(float64)` or `.(bool)` If no Type is specified, then it will be a boolean flag, which means that it cannot receive any value. If the property is present, value is true, else, false. Finally, you may add a modifier as a binary flag (that means that you hav to provide this values separated by a `|`).
 
 ### Parameter Types
 
