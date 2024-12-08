@@ -2,8 +2,6 @@ package gocli
 
 import (
 	"fmt"
-
-	gu "github.com/vcharco/gocli/internal/utils"
 )
 
 func (t *Terminal) replaceLine(userInput *string, text string) {
@@ -32,9 +30,12 @@ func (t *Terminal) cleanNextLineAndStay() {
 }
 
 func (t *Terminal) moveCursorToPos(pos int) {
-	fmt.Printf("\033[%dG", pos+len(t.Prompt)+1)
+	fmt.Printf("\033[%dG", pos+len(t.Styles.Prompt)+1)
 }
 
 func (t *Terminal) printPrompt() {
-	fmt.Printf(gu.ColorizeForeground(t.Styles.PromptColor, "%v%v"), t.Styles.Cursor, t.Prompt)
+	prompt := string(t.Styles.PromptColor) + t.Styles.Prompt // Prompt color
+	prompt += string(t.Styles.Cursor)                        // Cursor type
+
+	fmt.Print(prompt)
 }

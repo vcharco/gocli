@@ -10,6 +10,7 @@ import (
 
 func (t *Terminal) printAutocompleteSuggestions(userInput string) {
 	t.cleanNextLineAndStay()
+	fmt.Print(t.Styles.ForegroundSuggestions)
 	fmt.Print(strings.Join(t.filterCommands(userInput), "  "))
 	fmt.Print("\033[K")
 	fmt.Print("\033[1A")

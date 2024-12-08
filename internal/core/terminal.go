@@ -15,7 +15,6 @@ import (
 )
 
 type Terminal struct {
-	Prompt          string
 	Styles          TerminalStyles
 	Commands        []gt.Command
 	BypassCharacter string
@@ -26,12 +25,14 @@ type Terminal struct {
 }
 
 type TerminalStyles struct {
-	PromptColor        gu.Color
-	ForegroundColor    gu.Color
-	SelForegroundColor gu.Color
-	SelBackgroundColor gu.BgColor
-	Cursor             gu.Cursor
-	CursorColor        gu.CursorColor
+	Prompt                string
+	PromptColor           gu.Color
+	ForegroundColor       gu.Color
+	ForegroundSuggestions gu.Color
+	BackgroundColor       gu.BgColor
+	SelForegroundColor    gu.Color
+	SelBackgroundColor    gu.BgColor
+	Cursor                gu.Cursor
 }
 
 func (t *Terminal) Get(data ...string) TerminalResponse {
@@ -47,7 +48,6 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 
 	t.init()
 
-	var mustCleanStyles bool
 	var userInput string
 	// Append the incoming data to the userInput
 	if len(data) > 0 {
@@ -116,17 +116,14 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 
 		// Autocomplete TAB
 		if input == 9 {
-			bestMatch, found := gu.BestMatch(userInput, gt.GetCommandNames(t.Commands))
+			bestMatch, _ := gu.BestMatch(userInput, gt.GetCommandNames(t.Commands))
 			if userInput == bestMatch {
 				t.printAutocompleteSuggestions(userInput)
+				continue
 			} else {
-				if found {
-					t.replaceLine(&userInput, bestMatch+" ")
-				} else {
-					t.replaceLine(&userInput, bestMatch)
-				}
+				userInput = bestMatch
+				t.cursorPos = len(bestMatch)
 			}
-			continue
 		}
 
 		// Backspace
@@ -134,8 +131,6 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 			if t.cursorPos > 0 {
 				userInput = userInput[:t.cursorPos-1] + userInput[t.cursorPos:]
 				t.cursorPos--
-				t.cleanLine()
-				fmt.Print(userInput)
 			}
 		}
 
@@ -148,34 +143,22 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 		if input >= 32 && input < 127 {
 			userInput = userInput[:t.cursorPos] + string(input) + userInput[t.cursorPos:]
 			t.cursorPos++
-			if t.cursorPos < len(userInput) {
-				t.cleanLine()
-				fmt.Print(userInput)
-			} else {
-				fmt.Print(string(input))
-			}
 		}
 
-		// Clean next line. This clean the autocompletion suggestions
+		// Clean current input and write new one
 		t.cleanNextLine()
+		t.cleanLine()
+		output := fmt.Sprint(gu.ColorizeBoth(t.Styles.ForegroundColor, t.Styles.BackgroundColor, userInput))
 
 		// Apply highlight to selected text
-		if t.startSelection != -1 {
-			t.cleanLine()
-			init := t.startSelection
-			end := t.cursorPos
-			if init > end {
-				init, end = end, init
-			}
-			colorizedSelection := gu.ColorizeBoth(t.Styles.SelForegroundColor, t.Styles.SelBackgroundColor, userInput[init:end])
-			fmt.Printf("%v%v%v", userInput[:init], colorizedSelection, userInput[end:])
-			mustCleanStyles = true
-		} else if mustCleanStyles {
-			t.cleanLine()
-			fmt.Print(userInput)
-			mustCleanStyles = false
+		if highlighted, ok := t.highlightSelected(userInput); ok {
+			output = highlighted
 		}
 
+		// Print the line
+		fmt.Print(output)
+
+		// Set the cursor position at the right place
 		t.moveCursorToPos(t.cursorPos)
 	}
 
@@ -184,20 +167,26 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 func (t *Terminal) init() {
 	t.cursorPos = 0
 	t.startSelection = -1
+	if len(t.Styles.Prompt) == 0 {
+		t.Styles.Prompt = "gocli> "
+	}
 	if len(t.Styles.PromptColor) == 0 {
 		t.Styles.PromptColor = gu.Blue
 	}
 	if len(t.Styles.ForegroundColor) == 0 {
 		t.Styles.ForegroundColor = gu.White
 	}
+	if len(t.Styles.ForegroundSuggestions) == 0 {
+		t.Styles.ForegroundSuggestions = gu.LightGray
+	}
+	if len(t.Styles.BackgroundColor) == 0 {
+		t.Styles.BackgroundColor = gu.BgTransparent
+	}
 	if len(t.Styles.SelBackgroundColor) == 0 {
 		t.Styles.SelBackgroundColor = gu.BgLightBlue
 	}
 	if len(t.Styles.SelForegroundColor) == 0 {
 		t.Styles.SelForegroundColor = gu.Black
-	}
-	if len(t.Styles.CursorColor) == 0 {
-		t.Styles.CursorColor = gu.CursorLightBlue
 	}
 	if t.commandHistory == nil {
 		t.commandHistory = &commandHistory{Commands: []string{}, CurrentIndex: 0, Cache: "", IsCacheActive: false}

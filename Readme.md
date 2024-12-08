@@ -39,18 +39,18 @@ func main() {
 
   // This is completely optional, there are values are applied by default
   styles := gc.TerminalStyles{
-    PromptColor:        gc.Blue,
+    Prompt:             "Gocli> "           // Text to be displayed in the prompt
+    PromptColor:        gc.Blue,            // Color of the prompt
     Cursor:             gc.CursorBlock,     // CursorBlock, CursorBar or CursorUnderline
-    CursorColor:        gc.CursorLightBlue,
     ForegroundColor:    gc.White,           // Color of the text when not selected
-    SelForegroundColor: gc.Blue,            // Color of the selected text
-    SelBackgroundColor: gc.BgLightBlue,     // Color
+    BackgroundColor:    gu.BgTransparent,   // Background color of the terminal
+    SelForegroundColor: gc.Blue,            // Color of the text when selected
+    SelBackgroundColor: gc.BgLightBlue,     // Color of the selection
   }
 
   // Configuration
   cli := gc.Terminal{
-    Prompt:          "GOH> ",
-    Styles:          styles,
+    Styles:          styles, // You may pass gc.TerminalStyles{} if don't want to change defaults
     Commands:        commands,
     BypassCharacter: ":", // Allows to execute commands by the OS -> :ls -l
     CtrlKeys:        []byte{gc.Ctrl_A, gc.Ctrl_B}, // CRTL keys to caputure

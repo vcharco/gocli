@@ -1,6 +1,10 @@
 package gocli
 
-import "fmt"
+import (
+	"fmt"
+
+	gu "github.com/vcharco/gocli/internal/utils"
+)
 
 func (t *Terminal) handleCursorAndContinue(input byte, buf []byte, userInput *string) bool {
 
@@ -90,4 +94,19 @@ func (t *Terminal) checkTextSelection(input byte, buf []byte, userInput *string)
 		// If SHIFT+L/R was pressed, we cancel selection
 		t.startSelection = -1
 	}
+}
+
+func (t *Terminal) highlightSelected(userInput string) (string, bool) {
+	if t.startSelection != -1 {
+		init := t.startSelection
+		end := t.cursorPos
+		if init > end {
+			init, end = end, init
+		}
+		colorizedSelection := gu.ColorizeBoth(t.Styles.SelForegroundColor, t.Styles.SelBackgroundColor, userInput[init:end])
+		regularTextStart := gu.ColorizeBoth(t.Styles.ForegroundColor, t.Styles.BackgroundColor, userInput[:init])
+		regularTextEnd := gu.ColorizeBoth(t.Styles.ForegroundColor, t.Styles.BackgroundColor, userInput[end:])
+		return fmt.Sprintf("%v%v%v", regularTextStart, colorizedSelection, regularTextEnd), true
+	}
+	return userInput, false
 }

@@ -5,7 +5,8 @@ type BgColor string
 
 const (
 	// Reset colors
-	Reset Color = "\033[0m"
+	Reset   Color   = "\033[0m"
+	BgReset BgColor = "\033[0m"
 
 	// Regular text colors
 	Red      Color = "\033[31m"
@@ -28,17 +29,25 @@ const (
 	BrightCyan    Color = "\033[96m"
 	BrightWhite   Color = "\033[97m"
 
+	// Extended colors (256 colors)
+	LightBlue    Color = "\033[38;5;153m"
+	LightGreen   Color = "\033[38;5;120m"
+	LightYellow  Color = "\033[38;5;228m"
+	LightRed     Color = "\033[38;5;203m"
+	LightMagenta Color = "\033[38;5;213m"
+	LightCyan    Color = "\033[38;5;159m"
+	LightGray    Color = "\033[38;5;250m"
+
 	// Regular background colors
-	BgRed      BgColor = "\033[41m"
-	BgGreen    BgColor = "\033[42m"
-	BgYellow   BgColor = "\033[43m"
-	BgBlue     BgColor = "\033[44m"
-	BgMagenta  BgColor = "\033[45m"
-	BgCyan     BgColor = "\033[46m"
-	BgWhite    BgColor = "\033[47m"
-	BgBlack    BgColor = "\033[40m"
-	BgGray     BgColor = "\033[48;5;235m"
-	BgDarkGray BgColor = "\033[48;5;236m"
+	BgTransparent BgColor = ""
+	BgRed         BgColor = "\033[41m"
+	BgGreen       BgColor = "\033[42m"
+	BgYellow      BgColor = "\033[43m"
+	BgBlue        BgColor = "\033[44m"
+	BgMagenta     BgColor = "\033[45m"
+	BgCyan        BgColor = "\033[46m"
+	BgWhite       BgColor = "\033[47m"
+	BgBlack       BgColor = "\033[40m"
 
 	// Bright background colors
 	BgBrightRed     BgColor = "\033[101m"
@@ -56,6 +65,9 @@ const (
 	BgLightRed     BgColor = "\033[48;5;203m"
 	BgLightMagenta BgColor = "\033[48;5;213m"
 	BgLightCyan    BgColor = "\033[48;5;159m"
+	BgLightGray    BgColor = "\033[48;5;250m"
+	BgGray         BgColor = "\033[48;5;235m"
+	BgDarkGray     BgColor = "\033[48;5;236m"
 )
 
 func ColorizeForeground(c Color, text string) string {
