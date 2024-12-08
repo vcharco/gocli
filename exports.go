@@ -31,6 +31,7 @@ const (
 const (
 	Cmd            = gg.Cmd
 	OsCmd          = gg.OsCmd
+	CmdHelp        = gg.CmdHelp
 	CmdError       = gg.CmdError
 	CtrlKey        = gg.CtrlKey
 	ParamError     = gg.ParamError
