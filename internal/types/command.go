@@ -14,3 +14,11 @@ func SortCommands(candidates []Command) {
 		return candidates[i].Name < candidates[j].Name
 	})
 }
+
+func GetCommandNames(commands []Command) []string {
+	cmdNames := make([]string, 0, len(commands))
+	for _, cmd := range commands {
+		cmdNames = append(cmdNames, cmd.Name)
+	}
+	return cmdNames
+}

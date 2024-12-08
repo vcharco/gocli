@@ -112,7 +112,7 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 
 		// Autocomplete TAB
 		if input == 9 {
-			bestMatch, found := gu.BestMatch(userInput, t.Commands)
+			bestMatch, found := gu.BestMatch(userInput, gt.GetCommandNames(t.Commands))
 			if userInput == bestMatch {
 				t.printAutocompleteSuggestions(userInput)
 			} else {
