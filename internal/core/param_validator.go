@@ -73,7 +73,7 @@ func ValidateCommand(candidates []gt.Command, command string) (gt.Command, map[s
 }
 
 func ValidateParams(candidate gt.Command, inputParams []string) (map[string]interface{}, error) {
-	var parsedParams map[string]interface{}
+	parsedParams := map[string]interface{}{}
 
 	if len(inputParams) == 0 {
 		parsedParams[candidate.Name] = nil

@@ -75,7 +75,7 @@ func (c *commandHistory) print(limit int) {
 
 func (c *commandHistory) getAt(index int) (string, error) {
 	if index < 0 || index >= len(c.Commands) {
-		return "", errors.New("Index out of range")
+		return "", errors.New("index out of range")
 	}
 	return c.Commands[index], nil
 }
