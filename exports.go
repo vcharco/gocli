@@ -9,23 +9,24 @@ import (
 type Terminal = gg.Terminal
 type TerminalResponse = gg.TerminalResponse
 type TerminalResponseType = gg.TerminalResponseType
-type Candidate = gt.Candidate
-type CandidateOption = gt.CandidateOption
-type CandidateOptionModifier = gt.CandidateOptionModifier
-type CandidateType = gt.CandidateType
+type Command = gt.Command
+type Param = gt.Param
+type ParamModifier = gt.ParamModifier
+type ParamType = gt.ParamType
 
 const (
-	Date   = gt.Date
-	Domain = gt.Domain
-	Email  = gt.Email
-	Ipv4   = gt.Ipv4
-	Ipv6   = gt.Ipv6
-	Number = gt.Number
-	Phone  = gt.Phone
-	Text   = gt.Text
-	Time   = gt.Time
-	Url    = gt.Url
-	UUID   = gt.UUID
+	Date        = gt.Date
+	Domain      = gt.Domain
+	Email       = gt.Email
+	Ipv4        = gt.Ipv4
+	Ipv6        = gt.Ipv6
+	Number      = gt.Number
+	FloatNumber = gt.FloatNumber
+	Phone       = gt.Phone
+	Text        = gt.Text
+	Time        = gt.Time
+	Url         = gt.Url
+	UUID        = gt.UUID
 )
 
 const (

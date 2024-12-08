@@ -1,27 +1,28 @@
 package gocli
 
 import (
+	"errors"
 	"fmt"
 )
 
-type CommandHistory struct {
+type commandHistory struct {
 	Commands      []string
 	CurrentIndex  int
 	Cache         string
 	IsCacheActive bool
 }
 
-func (c *CommandHistory) Append(command string) {
+func (c *commandHistory) append(command string) {
 	c.Commands = append(c.Commands, command)
-	c.ResetIndex()
+	c.resetIndex()
 }
 
-func (c *CommandHistory) Clear() {
+func (c *commandHistory) clear() {
 	c.Commands = []string{}
-	c.ResetIndex()
+	c.resetIndex()
 }
 
-func (c *CommandHistory) GetPrev(currentCommand string) (string, error) {
+func (c *commandHistory) getPrev(currentCommand string) (string, error) {
 	if c.CurrentIndex <= 0 {
 		return "", fmt.Errorf("no previous commands")
 	}
@@ -35,7 +36,7 @@ func (c *CommandHistory) GetPrev(currentCommand string) (string, error) {
 	return c.Commands[c.CurrentIndex], nil
 }
 
-func (c *CommandHistory) GetNext() (string, error) {
+func (c *commandHistory) getNext() (string, error) {
 	if c.CurrentIndex >= len(c.Commands)-1 {
 		if c.IsCacheActive {
 			c.IsCacheActive = false
@@ -53,15 +54,15 @@ func (c *CommandHistory) GetNext() (string, error) {
 	return "", fmt.Errorf("already at the most recent command")
 }
 
-func (c *CommandHistory) ResetIndex() {
+func (c *commandHistory) resetIndex() {
 	c.CurrentIndex = len(c.Commands)
 }
 
-func (c *CommandHistory) Count() int {
+func (c *commandHistory) count() int {
 	return len(c.Commands)
 }
 
-func (c *CommandHistory) Print(limit int) {
+func (c *commandHistory) print(limit int) {
 	if limit == 0 || limit > len(c.Commands) {
 		limit = len(c.Commands)
 	}
@@ -70,4 +71,15 @@ func (c *CommandHistory) Print(limit int) {
 	for i := start; i < len(c.Commands); i++ {
 		fmt.Println(c.Commands[i])
 	}
+}
+
+func (c *commandHistory) getAt(index int) (string, error) {
+	if index < 0 || index >= len(c.Commands) {
+		return "", errors.New("Index out of range")
+	}
+	return c.Commands[index], nil
+}
+
+func (c *commandHistory) getAll() []string {
+	return c.Commands
 }

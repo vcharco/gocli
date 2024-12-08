@@ -16,11 +16,11 @@ import (
 type Terminal struct {
 	Prompt          string
 	PromptColor     gu.Color
-	Options         []gt.Candidate
+	Commands        []gt.Command
 	BypassCharacter string
-	CursorPos       int
-	CommandHistory  *CommandHistory
 	CtrlKeys        []byte
+	cursorPos       int
+	commandHistory  *commandHistory
 }
 
 type TerminalResponseType int
@@ -37,7 +37,7 @@ const (
 
 type TerminalResponse struct {
 	Command  string
-	Options  map[string]string
+	Params   map[string]interface{}
 	RawInput string
 	Type     TerminalResponseType
 	CtrlKey  byte
@@ -46,15 +46,15 @@ type TerminalResponse struct {
 
 func (t *Terminal) Get(data ...string) TerminalResponse {
 
-	if t.CommandHistory == nil {
-		t.CommandHistory = &CommandHistory{Commands: []string{}, CurrentIndex: 0, Cache: "", IsCacheActive: false}
+	if t.commandHistory == nil {
+		t.commandHistory = &commandHistory{Commands: []string{}, CurrentIndex: 0, Cache: "", IsCacheActive: false}
 	}
 
-	t.CommandHistory.ResetIndex()
+	t.commandHistory.resetIndex()
 
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
-		return t.getTerminalResponse("", map[string]string{}, "", ExecutionError, 0, err, nil)
+		return t.getTerminalResponse("", map[string]interface{}{}, "", ExecutionError, 0, err, nil)
 	}
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
@@ -62,7 +62,7 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 	signal.Notify(signalChan, syscall.SIGINT)
 
 	var userInput string
-	t.CursorPos = 0
+	t.cursorPos = 0
 
 	t.printPrompt()
 	t.cleanNextLine()
@@ -75,7 +75,7 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 		buf := make([]byte, 6)
 		_, err := os.Stdin.Read(buf)
 		if err != nil {
-			return t.getTerminalResponse("", map[string]string{}, "", ExecutionError, 0, err, oldState)
+			return t.getTerminalResponse("", map[string]interface{}{}, "", ExecutionError, 0, err, oldState)
 		}
 
 		input := buf[0]
@@ -85,8 +85,8 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 
 			// Bypass command to OS
 			if len(t.BypassCharacter) > 0 && strings.HasPrefix(userInput, t.BypassCharacter) {
-				t.CommandHistory.Append(userInput)
-				rt := t.getTerminalResponse("", map[string]string{}, userInput[len(t.BypassCharacter):], OsCmd, 0, nil, oldState)
+				t.commandHistory.append(userInput)
+				rt := t.getTerminalResponse("", map[string]interface{}{}, userInput[len(t.BypassCharacter):], OsCmd, 0, nil, oldState)
 				gu.ExecCmd(userInput[len(t.BypassCharacter):])
 				return rt
 			}
@@ -96,24 +96,24 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 
 			if strings.HasSuffix(userInput, "?") {
 				userInput = userInput[:len(userInput)-1]
-				command, err := GetClosestCommand(t.Options, userInput)
+				command, err := GetClosestCommand(t.Commands, userInput)
 				if err != nil {
-					return t.getTerminalResponse(command.Name, map[string]string{}, userInput, CmdError, 0, err, oldState)
+					return t.getTerminalResponse(command.Name, map[string]interface{}{}, userInput, CmdError, 0, err, oldState)
 				}
-				tr := t.getTerminalResponse(command.Name, map[string]string{}, userInput, CmdHelp, 0, nil, oldState)
+				tr := t.getTerminalResponse(command.Name, map[string]interface{}{}, userInput, CmdHelp, 0, nil, oldState)
 				t.printHelp(command)
 				return tr
 			}
 
 			// Validate command
-			command, params, err := ValidateCommand(t.Options, userInput)
+			command, params, err := ValidateCommand(t.Commands, userInput)
 
 			if err != nil {
-				return t.getTerminalResponse("", map[string]string{}, userInput, ParamError, 0, err, oldState)
+				return t.getTerminalResponse("", map[string]interface{}{}, userInput, ParamError, 0, err, oldState)
 			}
 
 			// Log in history, format line and return
-			t.CommandHistory.Append(userInput)
+			t.commandHistory.append(userInput)
 			re := regexp.MustCompile(`^\S+`)
 			t.replaceLine(&userInput, re.ReplaceAllString(userInput, command.Name))
 
@@ -123,7 +123,7 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 		// Check overriden CTRL+KEY
 		ctrlKey := t.checkOverridenCtrl(input)
 		if ctrlKey != 0 {
-			return t.getTerminalResponse("", map[string]string{"key": string(ctrlKey)}, userInput, CtrlKey, ctrlKey, nil, oldState)
+			return t.getTerminalResponse("", map[string]interface{}{"key": string(ctrlKey)}, userInput, CtrlKey, ctrlKey, nil, oldState)
 		}
 
 		// Exit CTRL+C
@@ -135,7 +135,7 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 
 		// Autocomplete TAB
 		if input == 9 {
-			bestMatch, found := gu.BestMatch(userInput, t.Options)
+			bestMatch, found := gu.BestMatch(userInput, t.Commands)
 			if userInput == bestMatch {
 				t.printAutocompleteSuggestions(userInput)
 			} else {
@@ -157,9 +157,9 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 
 		// Backspace
 		if input == 127 {
-			if t.CursorPos > 0 {
-				userInput = userInput[:t.CursorPos-1] + userInput[t.CursorPos:]
-				t.CursorPos--
+			if t.cursorPos > 0 {
+				userInput = userInput[:t.cursorPos-1] + userInput[t.cursorPos:]
+				t.cursorPos--
 				t.cleanLine()
 				fmt.Print(userInput)
 			}
@@ -169,28 +169,28 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 		if input == 27 && len(buf) >= 3 && buf[1] == 91 {
 			// LEFT
 			if buf[2] == 68 {
-				if t.CursorPos > 0 {
-					t.CursorPos--
+				if t.cursorPos > 0 {
+					t.cursorPos--
 					fmt.Print("\033[1D")
 				}
 			}
 			// RIGHT
 			if buf[2] == 67 {
-				if t.CursorPos < len(userInput) {
-					t.CursorPos++
+				if t.cursorPos < len(userInput) {
+					t.cursorPos++
 					fmt.Print("\033[1C")
 				}
 			}
 			// UP
 			if buf[2] == 65 {
-				str, err := t.CommandHistory.GetPrev(userInput)
+				str, err := t.commandHistory.getPrev(userInput)
 				if err == nil {
 					t.replaceLine(&userInput, str)
 				}
 			}
 			// DOWN
 			if buf[2] == 66 {
-				str, err := t.CommandHistory.GetNext()
+				str, err := t.commandHistory.getNext()
 				if err == nil {
 					t.replaceLine(&userInput, str)
 				}
@@ -241,9 +241,9 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 		}
 
 		if input >= 32 && input < 127 {
-			userInput = userInput[:t.CursorPos] + string(input) + userInput[t.CursorPos:]
-			t.CursorPos++
-			if t.CursorPos < len(userInput) {
+			userInput = userInput[:t.cursorPos] + string(input) + userInput[t.cursorPos:]
+			t.cursorPos++
+			if t.cursorPos < len(userInput) {
 				t.cleanLine()
 				fmt.Print(userInput)
 			} else {
@@ -252,7 +252,7 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 		}
 
 		t.cleanNextLine()
-		t.moveCursorToPos(t.CursorPos)
+		t.moveCursorToPos(t.cursorPos)
 	}
 
 }
@@ -261,7 +261,7 @@ func (t *Terminal) replaceLine(userInput *string, text string) {
 	t.cleanLine()
 	fmt.Print(text)
 	t.moveCursorToPos(len(text))
-	t.CursorPos = len(text)
+	t.cursorPos = len(text)
 	*userInput = text
 }
 
@@ -270,13 +270,13 @@ func (t *Terminal) printAutocompleteSuggestions(userInput string) {
 	fmt.Print(strings.Join(t.filterStrings(userInput), "  "))
 	fmt.Print("\033[K")
 	fmt.Print("\033[1A")
-	t.moveCursorToPos(t.CursorPos)
+	t.moveCursorToPos(t.cursorPos)
 }
 
 func (t *Terminal) filterStrings(prefix string) []string {
 	var result []string
-	gt.SortCandidates(t.Options)
-	for _, candidate := range t.Options {
+	gt.SortCommands(t.Commands)
+	for _, candidate := range t.Commands {
 		if strings.HasPrefix(candidate.Name, prefix) && candidate.Name != prefix && !candidate.Hidden {
 			result = append(result, candidate.Name)
 		}
@@ -284,28 +284,28 @@ func (t *Terminal) filterStrings(prefix string) []string {
 	return result
 }
 
-func (t *Terminal) printHelp(command gt.Candidate) {
+func (t *Terminal) printHelp(command gt.Command) {
 
-	gt.SortCandidateOptions(command.Options)
+	gt.SortParams(command.Params)
 
 	if len(command.Description) > 0 {
 		fmt.Printf("\n%v\n", command.Description)
 	}
 
-	var commandFlags []gt.CandidateOption
-	var commandParams []gt.CandidateOption
-	var defaultParam gt.CandidateOption
+	var commandFlags []gt.Param
+	var commandParams []gt.Param
+	var defaultParam gt.Param
 
-	for _, option := range command.Options {
-		if option.Modifier&gt.DEFAULT != 0 {
-			defaultParam = option
+	for _, param := range command.Params {
+		if param.Modifier&gt.DEFAULT != 0 {
+			defaultParam = param
 			continue
 		}
-		if option.Type == gt.None {
-			commandFlags = append(commandFlags, option)
+		if param.Type == gt.None {
+			commandFlags = append(commandFlags, param)
 			continue
 		}
-		commandParams = append(commandParams, option)
+		commandParams = append(commandParams, param)
 	}
 
 	usageLine := fmt.Sprintf("\nUsage: %v", command.Name)
@@ -336,24 +336,24 @@ func (t *Terminal) printHelp(command gt.Candidate) {
 		fmt.Printf("\nFLAGS:\n")
 	}
 
-	for _, option := range commandFlags {
+	for _, param := range commandFlags {
 		reqText := "OPTIONAL"
-		if option.Modifier&gt.REQUIRED != 0 {
+		if param.Modifier&gt.REQUIRED != 0 {
 			reqText = "REQUIRED"
 		}
-		fmt.Printf("  %v: (%v) %v\n", option.Name, reqText, option.Description)
+		fmt.Printf("  %v: (%v) %v\n", param.Name, reqText, param.Description)
 	}
 
 	if len(commandParams) > 0 {
 		fmt.Printf("\nPARAMS:\n")
 	}
 
-	for _, option := range commandParams {
+	for _, param := range commandParams {
 		reqText := "OPTIONAL"
-		if option.Modifier&gt.REQUIRED != 0 {
+		if param.Modifier&gt.REQUIRED != 0 {
 			reqText = "REQUIRED"
 		}
-		fmt.Printf("  %v <%v>: (%v) %v\n", option.Name, GetValidationTypeName(option.Type), reqText, option.Description)
+		fmt.Printf("  %v <%v>: (%v) %v\n", param.Name, GetValidationTypeName(param.Type), reqText, param.Description)
 	}
 
 	fmt.Println()
@@ -367,7 +367,7 @@ func (t *Terminal) cleanLine() {
 func (t *Terminal) cleanNextLine() {
 	t.cleanNextLineAndStay()
 	fmt.Print("\033[1A")
-	t.moveCursorToPos(t.CursorPos)
+	t.moveCursorToPos(t.cursorPos)
 }
 
 func (t *Terminal) cleanNextLineAndStay() {
@@ -389,14 +389,44 @@ func (t *Terminal) checkOverridenCtrl(input byte) byte {
 	return 0
 }
 
-func (t *Terminal) getTerminalResponse(command string, options map[string]string, rawInput string, responseType TerminalResponseType, ctrlKey byte, err error, oldState *term.State) TerminalResponse {
+func (t *Terminal) getTerminalResponse(command string, params map[string]interface{}, rawInput string, responseType TerminalResponseType, ctrlKey byte, err error, oldState *term.State) TerminalResponse {
 	if oldState != nil {
 		term.Restore(int(os.Stdin.Fd()), oldState)
 	}
 	fmt.Println()
-	return TerminalResponse{Command: command, Options: options, RawInput: rawInput, Type: responseType, CtrlKey: ctrlKey, Error: err}
+	return TerminalResponse{Command: command, Params: params, RawInput: rawInput, Type: responseType, CtrlKey: ctrlKey, Error: err}
 }
 
 func (t *Terminal) printPrompt() {
 	fmt.Printf(gu.Colorize(t.PromptColor, "%v"), t.Prompt)
+}
+
+func (t *Terminal) PrintHistory(limit int) {
+	t.commandHistory.print(limit)
+}
+
+func (t *Terminal) ClearHistory() {
+	t.commandHistory.clear()
+}
+
+func (t *Terminal) CountHistory() int {
+	return t.commandHistory.count()
+}
+
+func (t *Terminal) GetHistoryAt(index int) (string, error) {
+	return t.commandHistory.getAt(index)
+}
+
+func (t *Terminal) GetHistory(index int) []string {
+	return t.commandHistory.getAll()
+}
+
+func (tr *TerminalResponse) GetParam(name string, defaultValue interface{}) interface{} {
+	if value, exists := tr.Params[name]; exists {
+		if val, ok := value.(string); ok && len(val) == 0 {
+			return true
+		}
+		return value
+	}
+	return defaultValue
 }

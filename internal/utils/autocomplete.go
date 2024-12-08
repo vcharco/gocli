@@ -6,7 +6,7 @@ import (
 	gt "github.com/vcharco/gocli/internal/types"
 )
 
-func BestMatch(userOption string, options []gt.Candidate) (string, bool) {
+func BestMatch(userOption string, options []gt.Command) (string, bool) {
 	if userOption == "" {
 		return "", false
 	}

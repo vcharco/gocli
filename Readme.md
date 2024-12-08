@@ -22,28 +22,27 @@ import (
 func main() {
 
   // Here we declare the commands and their params
-  options := []gc.Candidate{
+  commands := []gc.Command{
     // We may set a description to commands and params for the help
-    {Name: "foo", Description: "Perform foo operations", Options: []gc.CandidateOption{
-      {Name: "-f", Description: "foo flag"}, // If no type defined, it wil be a flag
-      {Name: "--foo", Type: gc.Text}, // We set types for the validation of the params
-      {Name: "fooDefault", Type: gc.Number, Modifier: gc.DEFAULT}, // This wil be the default value
+    {Name: "foo", Description: "Perform foo operations", Params: []gc.Param{
+      // If no type defined, it wil be a flag (Ej: -f, --help, --get-history)
+      {Name: "-f", Description: "foo flag"},
+      // We set types for param validation (Ej: --foo foobar, --limit 20, -l 20)
+      {Name: "--foo", Type: gc.Text},
+      // This is how we specify a default value and set it to required
+      {Name: "fooDefault", Type: gc.Number, Modifier: gc.DEFAULT | gc.REQUIRED},
     }},
-
-    {Name: "exit", Hidden: true}, // this command won't be displayed when tab
-
-    {Name: "print-history", Options: []gc.CandidateOption{
-      // This is a default param that must be provided
-      {Name: "default", Type: gc.Number, Modifier: gc.DEFAULT | gc.REQUIRED},
-    }},
+    // This is how we set a hidden command. This is a valid command with autcompletion
+    // as the rest of the params, but will not be displayed in the suggestions when tab
+    {Name: "exit", Hidden: true},
   }
 
   // Configuration
   cli := gc.Terminal{
     Prompt:          "GOH> ",
     PromptColor:     gc.Blue,
-    Options:         options, // Commands defined earlier
-    BypassCharacter: ":",     // Allows to execute commands by the OS -> :ls -l
+    Commands:        commands,
+    BypassCharacter: ":", // Allows to execute commands by the OS -> :ls -l
     CtrlKeys:        []byte{gc.Ctrl_A, gc.Ctrl_B}, // CRTL keys to caputure
   }
 
@@ -70,34 +69,14 @@ if response.Type == gc.Cmd {
   // Now we check what command was typed by the user
   switch response.Command {
     case "foo":
-      // This is how we get default value of a command
-      fooDefault, existsFooDefault := response.Options["fooDefault"]
-      // For non required values we must always check if they exists
-      if existsFooDefault {
-        fmt.Println("The default value is " + fooDefault)
-      }
+      // This is how we retrieve values. First is the name and then the default value
+      fooDefault := response.GetParam("fooDefault", "")
+      fooVal := response.GetParam("--foo", "foo default value")
 
-      // This is how we get a flag param (without type)
-      _, existsF := response.Options["-f"]
-      if existsF {
-        fmt.Println("-f param is set")
-      }
+      // For flag params, default value must be a boolean. Normally set to false
+      fVal := response.GetParam("-f", false)
 
-      // This is how we get a non flag or default param
-      fooVal, existsFoo := response.Options["--foo"]
-      if existsFoo {
-        fmt.Println("The --foo value is " + fooVal)
-      }
-
-    case "print-history":
-      // For non Text type params, we may need a cast, but the format will
-      // be valid as they were been already checked by the cli
-      limit := 0
-      value, exists := response.Options["default"]
-      if exists {
-        limit = strconv.Atoi(value)
-      }
-      cli.CommandHistory.Print(limit)
+      fmt.Printf("default: %v; -f: %v; --foo: %v\n", fooDefault, fVal, fooVal)
   }
 }
 ```
@@ -108,13 +87,19 @@ The cli has a defautl command history. We use the UP/DOWN arrow keys to get the 
 
 ```go
 // This is how we print the history
-cli.CommandHistory.Print(20)
+cli.PrintHistory(20)
 
 // This is how we clear the history
-cli.CommandHistory.Clear()
+cli.ClearHistory()
 
 // This is how we get the number of commands in the history
-numCmds := cli.CommandHistory.Count()
+numCmds := cli.CountHistory()
+
+// This is how we get all commands in history
+historyCommands := cli.GetHistory()
+
+// This is how we get an specific command in history
+historyCommand := cli.GetHistoryAt(5)
 ```
 
 ### Checking response errors
