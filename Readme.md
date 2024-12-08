@@ -22,10 +22,10 @@ import (
 func main() {
 
   // Here we declare the commands and their params
-  commands := []gc.Command{
+  commands := []gc.Command {
     // We may set a description to commands and params for the help
-    {Name: "foo", Description: "Perform foo operations", Params: []gc.Param{
-      // If no type defined, it wil be a flag (Ej: -f, --help, --get-history)
+    {Name: "foo", Description: "Perform foo operations", Params: []gc.Param {
+      // If no type defined, it will be a flag (Ej: -f, --help, --get-history)
       {Name: "-f", Description: "foo flag"},
       // We set types for param validation (Ej: --foo foobar, --limit 20, -l 20)
       {Name: "--foo", Type: gc.Text},
@@ -38,7 +38,7 @@ func main() {
   }
 
   // Configuration
-  cli := gc.Terminal{
+  cli := gc.Terminal {
     Styles:          TerminalStyles{}, // Default styles
     Commands:        commands,
     BypassCharacter: ":", // Allows to execute commands by the OS -> :ls -l
@@ -46,11 +46,10 @@ func main() {
   }
 
   for {
-
     // Gets the user input
     response := cli.Get()
 
-    // We may pass a string (like the clipboard or a variable)
+    // Also we may pass a text what will be appended after the prompt
     // response := cli.Get("text sent to the CLI")
 
     // Here you handle the user input
@@ -64,7 +63,7 @@ Styling is optional, as default values are applied. But you will get a better us
 
 ```go
 // First, define a new TerminalStyles objects and fill only what you want
-styles := gc.TerminalStyles{
+styles := gc.TerminalStyles {
   Prompt:             "Gocli> "           // Text to be displayed in the prompt
   PromptColor:        gc.Blue,            // Color of the prompt
   Cursor:             gc.CursorBlock,     // CursorBlock, CursorBar or CursorUnderline
@@ -75,7 +74,7 @@ styles := gc.TerminalStyles{
 }
 
 // Finally, add this configuration to you Terminal object
-cli := gc.Terminal{
+cli := gc.Terminal {
   Styles:          styles,                // Our custom styles
   Commands:        commands,
   BypassCharacter: ":",
@@ -150,7 +149,7 @@ if response.Error != nil {
 
 ```go
 // First, configure what keys you want to trigger
-cli := gc.Terminal{
+cli := gc.Terminal {
   // ...
   CtrlKeys:     []byte{gc.Ctrl_A, gc.Ctrl_B},
 }
