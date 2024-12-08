@@ -58,28 +58,32 @@ func (c *commandHistory) resetIndex() {
 	c.CurrentIndex = len(c.Commands)
 }
 
-func (c *commandHistory) count() int {
-	return len(c.Commands)
-}
-
-func (c *commandHistory) print(limit int) {
-	if limit == 0 || limit > len(c.Commands) {
-		limit = len(c.Commands)
+func (t *Terminal) PrintHistory(limit int) {
+	if limit == 0 || limit > len(t.commandHistory.Commands) {
+		limit = len(t.commandHistory.Commands)
 	}
 
-	start := len(c.Commands) - limit
-	for i := start; i < len(c.Commands); i++ {
-		fmt.Println(c.Commands[i])
+	start := len(t.commandHistory.Commands) - limit
+	for i := start; i < len(t.commandHistory.Commands); i++ {
+		fmt.Println(t.commandHistory.Commands[i])
 	}
 }
 
-func (c *commandHistory) getAt(index int) (string, error) {
-	if index < 0 || index >= len(c.Commands) {
+func (t *Terminal) ClearHistory() {
+	t.commandHistory.clear()
+}
+
+func (t *Terminal) CountHistory() int {
+	return len(t.commandHistory.Commands)
+}
+
+func (t *Terminal) GetHistoryAt(index int) (string, error) {
+	if index < 0 || index >= len(t.commandHistory.Commands) {
 		return "", errors.New("index out of range")
 	}
-	return c.Commands[index], nil
+	return t.commandHistory.Commands[index], nil
 }
 
-func (c *commandHistory) getAll() []string {
-	return c.Commands
+func (t *Terminal) GetHistory(index int) []string {
+	return t.commandHistory.Commands
 }
