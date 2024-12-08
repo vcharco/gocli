@@ -158,20 +158,20 @@ if response.Type == gc.OsCmd {
 
 ## Types, values and other usefull information
 
-### Configuration options
+### Configuration
 
 - `Prompt`: This is the text at the beggining of the line.
 - `PromptColor`: Set the color of the prompt.
-- `Options`: This list of options is used for autocompletion and suggestions. It contains a sublist of valid parameters for each command.
+- `Commands`: This list of commands is used for autocompletion and suggestions. It contains a sublist of valid parameters for each command.
 - `BypassCharacter`: Gocli checks if the input starts with this character, and in that case, instead of processing it, it sends it directly to the operating system's console. This allows you to execute OS commands without leaving Gocli.
   - Example for BypassCharacter `:`: `Prompt> :ls -l`
 - `CtrlKeys`: A list of CTRL+Key combinations you want to override. When one of these combinations is detected, gocli will respond with the Type `CtrlKey` and the value of the detected combination will be available in the reponse property `CtrlKey`.
 
-### Options
+### Commands
 
-**Options** (Candidate) are the commands available for your custom cli. Each command must be provided with a Name. Optionally, you may provide a list of parameters (CandidateOption). If you set the Hidden attribute, the command still be valid, but won't be displayed in the help or the suggestions.
+They are the commands available for your custom cli. Each command must be provided with a Name. Optionally, you may provide a list of parameters. If you set the Hidden attribute, the command still be valid, but won't be displayed in the suggestions when pressing tabulator.
 
-**Parameters** should be provided with a Name. You may provide a Type, this will validate if the value provided next to the parameter match the type or not. Several types are supported right now, see below. If no Type is specified, then it will be a boolean flag, which means that it cannot receive any value. If the property is present, value is true, else, false. Finally, you may add a modifier as a binary flag (that means that you hav to provide this values separated by a `|`).
+**Parameters** should be provided with a Name. You may provide a Type, this will validate if the value provided next to the parameter match the type or not. Several types are supported right now, see below. For Number or FloatNumber types, the casting is performed automatically, but you still need to make an assertion with .(int) or .(float64) as the returned type is an interface{} type. If no Type is specified, then it will be a boolean flag, which means that it cannot receive any value. If the property is present, value is true, else, false. Finally, you may add a modifier as a binary flag (that means that you hav to provide this values separated by a `|`).
 
 ### Parameter Types
 
@@ -182,6 +182,7 @@ if response.Type == gc.OsCmd {
 - `Ipv4`: Ej: 192.168.0.12
 - `Ipv6`: Ej: 2001:0db8:85a3:0000:0000:8a2e:0370:7334
 - `Number`: Only integer numbers. Ej: 14, 43, 22, 17
+- `FloatNumber`: Float numbers. Ej: 14.3, 43.234, 22.0
 - `Phone`: Phone number. May start with +. Ej: +34 612345678
 - `Text`: Not empty text
 - `Time`: Must match the pattern HH:mm
@@ -198,7 +199,7 @@ if response.Type == gc.OsCmd {
 ```go
 type TerminalResponse struct {
   Command  string                // The command executed by Gocli
-  Options  map[string]string     // Options that follow the command (validated)
+  Param  map[string]interface{}  // Parameters that follow the command (validated)
   RawInput string                // The user input without validations neither splits
   Type     TerminalResponseType  // It tells you what happened, see below
   CtrlKey  byte                  // If Type = CtrlKey, this is the CTRL+key combination
@@ -216,7 +217,7 @@ type TerminalResponse struct {
 - `ParamError`: Error validating some parameter
 - `ExecutionError`: Internal error, should not happen
 
-# Extra
+## Extra
 
 There are two special characters.
 
