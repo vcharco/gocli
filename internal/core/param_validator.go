@@ -19,7 +19,8 @@ func GetClosestCommand(candidates []gt.Candidate, command string) (gt.Candidate,
 
 	candidate := gt.Candidate{Name: "", Options: []gt.CandidateOption{}}
 	for _, cmd := range candidates {
-		if cmd.Name == gu.BestMatch(words[0], candidates) {
+		bestMatch, _ := gu.BestMatch(words[0], candidates)
+		if cmd.Name == bestMatch {
 			candidate = cmd
 			break
 		}
@@ -42,7 +43,8 @@ func ValidateCommand(candidates []gt.Candidate, command string) (gt.Candidate, m
 
 	candidate := gt.Candidate{Name: "", Options: []gt.CandidateOption{}}
 	for _, cmd := range candidates {
-		if cmd.Name == gu.BestMatch(words[0], candidates) {
+		bestMatch, _ := gu.BestMatch(words[0], candidates)
+		if cmd.Name == bestMatch {
 			candidate = cmd
 			break
 		}

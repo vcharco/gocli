@@ -44,7 +44,7 @@ type TerminalResponse struct {
 	Error    error
 }
 
-func (t *Terminal) Get() TerminalResponse {
+func (t *Terminal) Get(data ...string) TerminalResponse {
 
 	if t.CommandHistory == nil {
 		t.CommandHistory = &CommandHistory{Commands: []string{}, CurrentIndex: 0, Cache: "", IsCacheActive: false}
@@ -67,8 +67,12 @@ func (t *Terminal) Get() TerminalResponse {
 	t.printPrompt()
 	t.cleanNextLine()
 
+	if len(data) > 0 && len(data[0]) > 0 {
+		t.replaceLine(&userInput, data[0])
+	}
+
 	for {
-		buf := make([]byte, 3)
+		buf := make([]byte, 6)
 		_, err := os.Stdin.Read(buf)
 		if err != nil {
 			return t.getTerminalResponse("", map[string]string{}, "", ExecutionError, 0, err, oldState)
@@ -131,11 +135,15 @@ func (t *Terminal) Get() TerminalResponse {
 
 		// Autocomplete TAB
 		if input == 9 {
-			bestMatch := gu.BestMatch(userInput, t.Options)
+			bestMatch, found := gu.BestMatch(userInput, t.Options)
 			if userInput == bestMatch {
 				t.printAutocompleteSuggestions(userInput)
 			} else {
-				t.replaceLine(&userInput, bestMatch)
+				if found {
+					t.replaceLine(&userInput, bestMatch+" ")
+				} else {
+					t.replaceLine(&userInput, bestMatch)
+				}
 			}
 			continue
 		}
@@ -159,30 +167,77 @@ func (t *Terminal) Get() TerminalResponse {
 
 		// Arrows
 		if input == 27 && len(buf) >= 3 && buf[1] == 91 {
+			// LEFT
 			if buf[2] == 68 {
 				if t.CursorPos > 0 {
 					t.CursorPos--
 					fmt.Print("\033[1D")
 				}
 			}
+			// RIGHT
 			if buf[2] == 67 {
 				if t.CursorPos < len(userInput) {
 					t.CursorPos++
 					fmt.Print("\033[1C")
 				}
 			}
+			// UP
 			if buf[2] == 65 {
 				str, err := t.CommandHistory.GetPrev(userInput)
 				if err == nil {
 					t.replaceLine(&userInput, str)
 				}
 			}
+			// DOWN
 			if buf[2] == 66 {
 				str, err := t.CommandHistory.GetNext()
 				if err == nil {
 					t.replaceLine(&userInput, str)
 				}
 			}
+
+			if len(buf) >= 6 {
+				// SHIFT + ARROWS
+				if buf[2] == 49 && buf[3] == 59 && buf[4] == 50 {
+					// SHIFT + LEFT
+					if buf[5] == 68 {
+						continue
+					}
+					// SHIFT + RIGHT
+					if buf[5] == 67 {
+						continue
+					}
+					// SHIFT + UP
+					if buf[5] == 65 {
+						continue
+					}
+					// SHIFT + DOWN
+					if buf[5] == 66 {
+						continue
+					}
+				}
+
+				// ALT (OPTION) + ARROWS
+				if buf[2] == 49 && buf[3] == 59 && buf[4] == 51 {
+					// ALT + LEFT
+					if buf[5] == 68 {
+						continue
+					}
+					// ALT + RIGHT
+					if buf[5] == 67 {
+						continue
+					}
+					// ALT + UP
+					if buf[5] == 65 {
+						continue
+					}
+					// ALT + DOWN
+					if buf[5] == 66 {
+						continue
+					}
+				}
+			}
+
 		}
 
 		if input >= 32 && input < 127 {

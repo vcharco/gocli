@@ -52,6 +52,9 @@ func main() {
     // Gets the user input
     response := cli.Get()
 
+    // We may pass a string (like the clipboard or a variable)
+    // response := cli.Get("text sent to the CLI")
+
     // Here you handle the user input
   }
 }

@@ -80,4 +80,5 @@ const (
 	Ctrl_X byte = 24
 	Ctrl_Y byte = 25
 	Ctrl_Z byte = 26
+	Escape byte = 27
 )

@@ -6,9 +6,9 @@ import (
 	gt "github.com/vcharco/gocli/internal/types"
 )
 
-func BestMatch(userOption string, options []gt.Candidate) string {
+func BestMatch(userOption string, options []gt.Candidate) (string, bool) {
 	if userOption == "" {
-		return ""
+		return "", false
 	}
 
 	var filteredOptions []string
@@ -19,14 +19,14 @@ func BestMatch(userOption string, options []gt.Candidate) string {
 	}
 
 	if len(filteredOptions) == 1 {
-		return filteredOptions[0]
+		return filteredOptions[0], true
 	}
 
 	if len(filteredOptions) > 1 {
-		return findCommonPrefix(filteredOptions)
+		return findCommonPrefix(filteredOptions), false
 	}
 
-	return userOption
+	return userOption, false
 }
 
 func findCommonPrefix(stringsList []string) string {
