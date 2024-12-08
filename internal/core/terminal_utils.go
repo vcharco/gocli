@@ -36,5 +36,5 @@ func (t *Terminal) moveCursorToPos(pos int) {
 }
 
 func (t *Terminal) printPrompt() {
-	fmt.Printf(gu.Colorize(t.PromptColor, "%v"), t.Prompt)
+	fmt.Printf(gu.ColorizeForeground(t.Styles.PromptColor, "%v%v"), t.Styles.Cursor, t.Prompt)
 }

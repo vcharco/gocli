@@ -1,7 +1,7 @@
 # Gocli
 
 This project consists of a Go module aimed at simplifying the development of applications based on interactive command-line interfaces. The module provides a function that opens a CLI which returns the entered command as a result.
-The CLI includes features such as autocompletion, suggestions, command history, and shortcuts like CTRL+C for exit the program safety and CTRL+L for clearing the screen.
+The CLI includes features such as autocompletion, suggestions, command history, and shortcuts like `CTRL+C`, `CTRL+V` (see the complete list in the Special Commands section at the end of the doc).
 
 ## Learn by example
 
@@ -37,10 +37,20 @@ func main() {
     {Name: "exit", Hidden: true},
   }
 
+  // This is completely optional, there are values are applied by default
+  styles := gc.TerminalStyles{
+    PromptColor:        gc.Blue,
+    Cursor:             gc.CursorBlock,     // CursorBlock, CursorBar or CursorUnderline
+    CursorColor:        gc.CursorLightBlue,
+    ForegroundColor:    gc.White,           // Color of the text when not selected
+    SelForegroundColor: gc.Blue,            // Color of the selected text
+    SelBackgroundColor: gc.BgLightBlue,     // Color
+  }
+
   // Configuration
   cli := gc.Terminal{
     Prompt:          "GOH> ",
-    PromptColor:     gc.Blue,
+    Styles:          styles,
     Commands:        commands,
     BypassCharacter: ":", // Allows to execute commands by the OS -> :ls -l
     CtrlKeys:        []byte{gc.Ctrl_A, gc.Ctrl_B}, // CRTL keys to caputure
@@ -217,7 +227,16 @@ type TerminalResponse struct {
 - `ParamError`: Error validating some parameter
 - `ExecutionError`: Internal error, should not happen
 
-## Extra
+## Special commands and characters
+
+There are several shortcuts listed down here to make more fluid your interaction (you may override this shortcuts, but is not recommended in most cases).
+
+- `CTRL+C`: Copy the selected text to the clipboard. If no text is selected, it copies the full line.
+- `CTRL+V`: Paste the clipboard.
+- `CTRL+L`: Clear the screen.
+- `CTRL+X`: Exit the program (safely)
+- `CTRL+A`: Move the cursor at the beginning of the line
+- `CTRL+E`: Move the cursor at the end of the line
 
 There are two special characters.
 

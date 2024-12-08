@@ -8,6 +8,7 @@ import (
 
 type Terminal = gg.Terminal
 type TerminalResponse = gg.TerminalResponse
+type TerminalStyles = gg.TerminalStyles
 type TerminalResponseType = gg.TerminalResponseType
 type Command = gt.Command
 type Param = gt.Param
@@ -40,14 +41,76 @@ const (
 )
 
 const (
-	Red     = gu.Red
-	Green   = gu.Green
-	Yellow  = gu.Yellow
-	Blue    = gu.Blue
-	Magenta = gu.Magenta
-	Cyan    = gu.Cyan
-	White   = gu.White
-	Reset   = gu.Reset
+	Reset               = gu.Reset
+	Red                 = gu.Red
+	Green               = gu.Green
+	Yellow              = gu.Yellow
+	Blue                = gu.Blue
+	Magenta             = gu.Magenta
+	Cyan                = gu.Cyan
+	White               = gu.White
+	Black               = gu.Black
+	Gray                = gu.Gray
+	DarkGray            = gu.DarkGray
+	BrightRed           = gu.BrightRed
+	BrightGreen         = gu.BrightGreen
+	BrightYellow        = gu.BrightYellow
+	BrightBlue          = gu.BrightBlue
+	BrightMagenta       = gu.BrightMagenta
+	BrightCyan          = gu.BrightCyan
+	BrightWhite         = gu.BrightWhite
+	BgRed               = gu.BgRed
+	BgGreen             = gu.BgGreen
+	BgYellow            = gu.BgYellow
+	BgBlue              = gu.BgBlue
+	BgMagenta           = gu.BgMagenta
+	BgCyan              = gu.BgCyan
+	BgWhite             = gu.BgWhite
+	BgBlack             = gu.BgBlack
+	BgGray              = gu.BgGray
+	BgDarkGray          = gu.BgDarkGray
+	BgBrightRed         = gu.BgBrightRed
+	BgBrightGreen       = gu.BgBrightGreen
+	BgBrightYellow      = gu.BgBrightYellow
+	BgBrightBlue        = gu.BgBrightBlue
+	BgBrightMagenta     = gu.BgBrightMagenta
+	BgBrightCyan        = gu.BgBrightCyan
+	BgBrightWhite       = gu.BgBrightWhite
+	BgLightBlue         = gu.BgLightBlue
+	BgLightGreen        = gu.BgLightGreen
+	BgLightYellow       = gu.BgLightYellow
+	BgLightRed          = gu.BgLightRed
+	BgLightMagenta      = gu.BgLightMagenta
+	BgLightCyan         = gu.BgLightCyan
+	CursorRed           = gu.CursorRed
+	CursorGreen         = gu.CursorGreen
+	CursorYellow        = gu.CursorYellow
+	CursorBlue          = gu.CursorBlue
+	CursorMagenta       = gu.CursorMagenta
+	CursorCyan          = gu.CursorCyan
+	CursorWhite         = gu.CursorWhite
+	CursorBlack         = gu.CursorBlack
+	CursorGray          = gu.CursorGray
+	CursorDarkGray      = gu.CursorDarkGray
+	CursorBrightRed     = gu.CursorBrightRed
+	CursorBrightGreen   = gu.CursorBrightGreen
+	CursorBrightYellow  = gu.CursorBrightYellow
+	CursorBrightBlue    = gu.CursorBrightBlue
+	CursorBrightMagenta = gu.CursorBrightMagenta
+	CursorBrightCyan    = gu.CursorBrightCyan
+	CursorBrightWhite   = gu.CursorBrightWhite
+	CursorLightBlue     = gu.CursorLightBlue
+	CursorLightGreen    = gu.CursorLightGreen
+	CursorLightYellow   = gu.CursorLightYellow
+	CursorLightRed      = gu.CursorLightRed
+	CursorLightMagenta  = gu.CursorLightMagenta
+	CursorLightCyan     = gu.CursorLightCyan
+)
+
+const (
+	CursorBlock     = gu.CursorBlock
+	CursorBar       = gu.CursorBar
+	CursorUnderline = gu.CursorUnderline
 )
 
 const (
@@ -56,31 +119,31 @@ const (
 )
 
 const (
-	Ctrl_A byte = 1
-	Ctrl_B byte = 2
-	Ctrl_C byte = 3
-	Ctrl_D byte = 4
-	Ctrl_E byte = 5
-	Ctrl_F byte = 6
-	Ctrl_G byte = 7
-	Ctrl_H byte = 8
-	Ctrl_I byte = 9
-	Ctrl_J byte = 10
-	Ctrl_K byte = 11
-	Ctrl_L byte = 12
-	Ctrl_M byte = 13
-	Ctrl_N byte = 14
-	Ctrl_O byte = 15
-	Ctrl_P byte = 16
-	Ctrl_Q byte = 17
-	Ctrl_R byte = 18
-	Ctrl_S byte = 19
-	Ctrl_T byte = 20
-	Ctrl_U byte = 21
-	Ctrl_V byte = 22
-	Ctrl_W byte = 23
-	Ctrl_X byte = 24
-	Ctrl_Y byte = 25
-	Ctrl_Z byte = 26
-	Escape byte = 27
+	Ctrl_A = gt.Ctrl_A
+	Ctrl_B = gt.Ctrl_B
+	Ctrl_C = gt.Ctrl_C
+	Ctrl_D = gt.Ctrl_D
+	Ctrl_E = gt.Ctrl_E
+	Ctrl_F = gt.Ctrl_F
+	Ctrl_G = gt.Ctrl_G
+	Ctrl_H = gt.Ctrl_H
+	Ctrl_I = gt.Ctrl_I
+	Ctrl_J = gt.Ctrl_J
+	Ctrl_K = gt.Ctrl_K
+	Ctrl_L = gt.Ctrl_L
+	Ctrl_M = gt.Ctrl_M
+	Ctrl_N = gt.Ctrl_N
+	Ctrl_O = gt.Ctrl_O
+	Ctrl_P = gt.Ctrl_P
+	Ctrl_Q = gt.Ctrl_Q
+	Ctrl_R = gt.Ctrl_R
+	Ctrl_S = gt.Ctrl_S
+	Ctrl_T = gt.Ctrl_T
+	Ctrl_U = gt.Ctrl_U
+	Ctrl_V = gt.Ctrl_V
+	Ctrl_W = gt.Ctrl_W
+	Ctrl_X = gt.Ctrl_X
+	Ctrl_Y = gt.Ctrl_Y
+	Ctrl_Z = gt.Ctrl_Z
+	Escape = gt.Escape
 )

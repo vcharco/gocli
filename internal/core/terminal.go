@@ -16,21 +16,25 @@ import (
 
 type Terminal struct {
 	Prompt          string
-	PromptColor     gu.Color
+	Styles          TerminalStyles
 	Commands        []gt.Command
 	BypassCharacter string
 	CtrlKeys        []byte
 	cursorPos       int
+	startSelection  int
 	commandHistory  *commandHistory
 }
 
+type TerminalStyles struct {
+	PromptColor        gu.Color
+	ForegroundColor    gu.Color
+	SelForegroundColor gu.Color
+	SelBackgroundColor gu.BgColor
+	Cursor             gu.Cursor
+	CursorColor        gu.CursorColor
+}
+
 func (t *Terminal) Get(data ...string) TerminalResponse {
-
-	if t.commandHistory == nil {
-		t.commandHistory = &commandHistory{Commands: []string{}, CurrentIndex: 0, Cache: "", IsCacheActive: false}
-	}
-
-	t.commandHistory.resetIndex()
 
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
@@ -41,12 +45,10 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT)
 
+	t.init()
+
+	var mustCleanStyles bool
 	var userInput string
-	t.cursorPos = 0
-
-	t.printPrompt()
-	t.cleanNextLine()
-
 	// Append the incoming data to the userInput
 	if len(data) > 0 {
 		joinedData := strings.Join(data, " ")
@@ -104,11 +106,13 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 			return getTerminalResponse(command.Name, params, userInput, Cmd, 0, nil, oldState)
 		}
 
-		// Check overriden CTRL+KEY
-		ctrlKey := t.checkSpecialKeys(input, oldState)
+		// Check special commands and overriden CTRL+KEY
+		ctrlKey := t.checkSpecialKeys(input, &userInput, oldState)
 		if ctrlKey != 0 {
-			return getTerminalResponse("", map[string]interface{}{"key": string(ctrlKey)}, userInput, CtrlKey, ctrlKey, nil, oldState)
+			return getTerminalResponse("", nil, userInput, CtrlKey, ctrlKey, nil, oldState)
 		}
+
+		t.checkTextSelection(input, buf, &userInput)
 
 		// Autocomplete TAB
 		if input == 9 {
@@ -135,69 +139,12 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 			}
 		}
 
-		// Arrows
-		if input == 27 && len(buf) >= 3 && buf[1] == 91 {
-			// LEFT
-			if buf[2] == 68 {
-				if t.cursorPos > 0 {
-					t.cursorPos--
-					fmt.Print("\033[1D")
-				}
-			}
-			// RIGHT
-			if buf[2] == 67 {
-				if t.cursorPos < len(userInput) {
-					t.cursorPos++
-					fmt.Print("\033[1C")
-				}
-			}
-			// UP
-			if buf[2] == 65 {
-				str, err := t.commandHistory.getPrev(userInput)
-				if err == nil {
-					t.replaceLine(&userInput, str)
-				}
-			}
-			// DOWN
-			if buf[2] == 66 {
-				str, err := t.commandHistory.getNext()
-				if err == nil {
-					t.replaceLine(&userInput, str)
-				}
-			}
-
-			if len(buf) >= 6 {
-				// SHIFT + ARROWS
-				if buf[2] == 49 && buf[3] == 59 && buf[4] == 50 {
-					// SHIFT + LEFT
-					if buf[5] == 68 {
-						continue
-					}
-					// SHIFT + RIGHT
-					if buf[5] == 67 {
-						continue
-					}
-					// SHIFT + UP
-					if buf[5] == 65 {
-						continue
-					}
-					// SHIFT + DOWN
-					if buf[5] == 66 {
-						continue
-					}
-				}
-
-				// ALT (OPTION) + ARROWS
-				if buf[2] == 49 && buf[3] == 59 && buf[4] == 51 {
-					// ALT + LEFT | RIGHT | UP | DOWN
-					if buf[5] == 68 || buf[5] == 67 || buf[5] == 65 || buf[5] == 66 {
-						continue
-					}
-				}
-			}
-
+		// Handle cursor movement and text selection
+		if !t.handleCursorAndContinue(input, buf, &userInput) {
+			continue
 		}
 
+		// Print characters
 		if input >= 32 && input < 127 {
 			userInput = userInput[:t.cursorPos] + string(input) + userInput[t.cursorPos:]
 			t.cursorPos++
@@ -209,8 +156,57 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 			}
 		}
 
+		// Clean next line. This clean the autocompletion suggestions
 		t.cleanNextLine()
+
+		// Apply highlight to selected text
+		if t.startSelection != -1 {
+			t.cleanLine()
+			init := t.startSelection
+			end := t.cursorPos
+			if init > end {
+				init, end = end, init
+			}
+			colorizedSelection := gu.ColorizeBoth(t.Styles.SelForegroundColor, t.Styles.SelBackgroundColor, userInput[init:end])
+			fmt.Printf("%v%v%v", userInput[:init], colorizedSelection, userInput[end:])
+			mustCleanStyles = true
+		} else if mustCleanStyles {
+			t.cleanLine()
+			fmt.Print(userInput)
+			mustCleanStyles = false
+		}
+
 		t.moveCursorToPos(t.cursorPos)
 	}
 
+}
+
+func (t *Terminal) init() {
+	t.cursorPos = 0
+	t.startSelection = -1
+	if len(t.Styles.PromptColor) == 0 {
+		t.Styles.PromptColor = gu.Blue
+	}
+	if len(t.Styles.ForegroundColor) == 0 {
+		t.Styles.ForegroundColor = gu.White
+	}
+	if len(t.Styles.SelBackgroundColor) == 0 {
+		t.Styles.SelBackgroundColor = gu.BgLightBlue
+	}
+	if len(t.Styles.SelForegroundColor) == 0 {
+		t.Styles.SelForegroundColor = gu.Black
+	}
+	if len(t.Styles.CursorColor) == 0 {
+		t.Styles.CursorColor = gu.CursorLightBlue
+	}
+	if t.commandHistory == nil {
+		t.commandHistory = &commandHistory{Commands: []string{}, CurrentIndex: 0, Cache: "", IsCacheActive: false}
+	}
+	if t.Styles.Cursor == "" {
+		t.Styles.Cursor = gu.CursorBlock
+	}
+	t.commandHistory.resetIndex()
+
+	t.printPrompt()
+	t.cleanNextLine()
 }
