@@ -37,20 +37,9 @@ func main() {
     {Name: "exit", Hidden: true},
   }
 
-  // This is completely optional, there are values are applied by default
-  styles := gc.TerminalStyles{
-    Prompt:             "Gocli> "           // Text to be displayed in the prompt
-    PromptColor:        gc.Blue,            // Color of the prompt
-    Cursor:             gc.CursorBlock,     // CursorBlock, CursorBar or CursorUnderline
-    ForegroundColor:    gc.White,           // Color of the text when not selected
-    BackgroundColor:    gu.BgTransparent,   // Background color of the terminal
-    SelForegroundColor: gc.Blue,            // Color of the text when selected
-    SelBackgroundColor: gc.BgLightBlue,     // Color of the selection
-  }
-
   // Configuration
   cli := gc.Terminal{
-    Styles:          styles, // You may pass gc.TerminalStyles{} if don't want to change defaults
+    Styles:          TerminalStyles{}, // Default styles
     Commands:        commands,
     BypassCharacter: ":", // Allows to execute commands by the OS -> :ls -l
     CtrlKeys:        []byte{gc.Ctrl_A, gc.Ctrl_B}, // CRTL keys to caputure
@@ -66,6 +55,31 @@ func main() {
 
     // Here you handle the user input
   }
+}
+```
+
+### Customizing the terminal
+
+Styling is optional, as default values are applied. But you will get a better user experience changing this default values. Note that we use `Bg` prefixed color names for `BackgroundColor` and `SelBackgroundColor`.
+
+```go
+// First, define a new TerminalStyles objects and fill only what you want
+styles := gc.TerminalStyles{
+  Prompt:             "Gocli> "           // Text to be displayed in the prompt
+  PromptColor:        gc.Blue,            // Color of the prompt
+  Cursor:             gc.CursorBlock,     // CursorBlock, CursorBar or CursorUnderline
+  ForegroundColor:    gc.White,           // Color of the text when not selected
+  BackgroundColor:    gu.BgTransparent,   // Background color of the terminal
+  SelForegroundColor: gc.Blue,            // Color of the text when selected
+  SelBackgroundColor: gc.BgLightBlue,     // Color of the selection
+}
+
+// Finally, add this configuration to you Terminal object
+cli := gc.Terminal{
+  Styles:          styles,                // Our custom styles
+  Commands:        commands,
+  BypassCharacter: ":",
+  CtrlKeys:        []byte{gc.Ctrl_A, gc.Ctrl_B},
 }
 ```
 
