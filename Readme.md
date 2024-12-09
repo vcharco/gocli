@@ -64,13 +64,19 @@ Styling is optional, as default values are applied. But you will get a better us
 ```go
 // First, define a new TerminalStyles objects and fill only what you want
 styles := gc.TerminalStyles {
-  Prompt:             "Gocli> "           // Text to be displayed in the prompt
-  PromptColor:        gc.Blue,            // Color of the prompt
-  Cursor:             gc.CursorBlock,     // CursorBlock, CursorBar or CursorUnderline
-  ForegroundColor:    gc.White,           // Color of the text when not selected
-  BackgroundColor:    gu.BgTransparent,   // Background color of the terminal
-  SelForegroundColor: gc.Blue,            // Color of the text when selected
-  SelBackgroundColor: gc.BgLightBlue,     // Color of the selection
+  Prompt:                 "Gocli> "           // Text to be displayed in the prompt
+  PromptColor:            gc.Blue,            // Color of the prompt
+  Cursor:                 gc.CursorBlock,     // CursorBlock, CursorBar or CursorUnderline
+  ForegroundColor:        gc.White,           // Color of the text when not selected
+  BackgroundColor:        gu.BgTransparent,   // Background color of the terminal
+  SelForegroundColor:     gc.Blue,            // Color of the text when selected
+  SelBackgroundColor:     gc.BgLightBlue,     // Color of the selection
+  HelpTextForeground:     gu.LightGray        // Color of the help (?) text
+	HelpTitlesForeground:   gu.Blue             // Color of the title sections in the help
+	HelpCommandForeground:  gu.White            // Color of the command in the help display
+	HelpParamsForeground:   gu.Yellow           // Color of the params in the help display
+	HelpRequiredForeground: gu.Red              // Color of (REQUIRED) param flag in help
+	HelpLineColor:          gu.Blue             // Color of the line in the help display
 }
 
 // Finally, add this configuration to you Terminal object

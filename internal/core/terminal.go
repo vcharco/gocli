@@ -25,14 +25,20 @@ type Terminal struct {
 }
 
 type TerminalStyles struct {
-	Prompt                string
-	PromptColor           gu.Color
-	ForegroundColor       gu.Color
-	ForegroundSuggestions gu.Color
-	BackgroundColor       gu.BgColor
-	SelForegroundColor    gu.Color
-	SelBackgroundColor    gu.BgColor
-	Cursor                gu.Cursor
+	Prompt                 string
+	PromptColor            gu.Color
+	ForegroundColor        gu.Color
+	ForegroundSuggestions  gu.Color
+	BackgroundColor        gu.BgColor
+	SelForegroundColor     gu.Color
+	SelBackgroundColor     gu.BgColor
+	HelpTextForeground     gu.Color
+	HelpTitlesForeground   gu.Color
+	HelpCommandForeground  gu.Color
+	HelpParamsForeground   gu.Color
+	HelpRequiredForeground gu.Color
+	HelpLineColor          gu.Color
+	Cursor                 gu.Cursor
 }
 
 func (t *Terminal) Get(data ...string) TerminalResponse {
@@ -187,6 +193,24 @@ func (t *Terminal) init() {
 	}
 	if len(t.Styles.SelForegroundColor) == 0 {
 		t.Styles.SelForegroundColor = gu.Black
+	}
+	if len(t.Styles.HelpTextForeground) == 0 {
+		t.Styles.HelpTextForeground = gu.LightGray
+	}
+	if len(t.Styles.HelpTitlesForeground) == 0 {
+		t.Styles.HelpTitlesForeground = gu.Blue
+	}
+	if len(t.Styles.HelpRequiredForeground) == 0 {
+		t.Styles.HelpRequiredForeground = gu.Red
+	}
+	if len(t.Styles.HelpCommandForeground) == 0 {
+		t.Styles.HelpCommandForeground = gu.White
+	}
+	if len(t.Styles.HelpParamsForeground) == 0 {
+		t.Styles.HelpParamsForeground = gu.Yellow
+	}
+	if len(t.Styles.HelpLineColor) == 0 {
+		t.Styles.HelpLineColor = gu.Blue
 	}
 	if t.commandHistory == nil {
 		t.commandHistory = &commandHistory{Commands: []string{}, CurrentIndex: 0, Cache: "", IsCacheActive: false}
