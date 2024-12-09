@@ -80,7 +80,7 @@ func (t *Terminal) printHelp(command gt.Command) {
 		} else {
 			prefix = fmt.Sprintf("  %v\n  %v%v ", vs, bl, hs)
 		}
-		fmt.Printf("%v%v  %v\n", prefix, gu.ColorizeForeground(t.Styles.HelpTitlesForeground, "DESCRIPTION"), gu.ColorizeForeground(t.Styles.HelpTextForeground, command.Description))
+		fmt.Printf("%v%v%v\n", prefix, gu.ColorizeForeground(t.Styles.HelpTitlesForeground, "DESCRIPTION  "), gu.ColorizeForeground(t.Styles.HelpTextForeground, command.Description))
 	}
 
 	if len(defaultParam.Name) > 0 || len(commandFlags) > 0 || len(commandParams) > 0 {
@@ -89,7 +89,7 @@ func (t *Terminal) printHelp(command gt.Command) {
 		prefix = fmt.Sprintf("  %v\n  %v%v ", vs, bl, hs)
 	}
 
-	usageLine := fmt.Sprintf("%v%v  %v", prefix, gu.ColorizeForeground(t.Styles.HelpTitlesForeground, "USAGE"), command.Name)
+	usageLine := fmt.Sprintf("%v%v%v", prefix, gu.ColorizeForeground(t.Styles.HelpTitlesForeground, "USAGE  "), command.Name)
 	usageLineValue := ""
 
 	if len(commandFlags) > 0 {
@@ -117,7 +117,7 @@ func (t *Terminal) printHelp(command gt.Command) {
 	}
 
 	if len(defaultParam.Description) > 0 {
-		fmt.Printf("%v%v %v\n", prefix, gu.ColorizeForeground(t.Styles.HelpTitlesForeground, "DEFAULT PARAM:"), gu.ColorizeForeground(t.Styles.HelpTextForeground, defaultParam.Description))
+		fmt.Printf("%v%v%v\n", prefix, gu.ColorizeForeground(t.Styles.HelpTitlesForeground, "DEFAULT PARAM  "), gu.ColorizeForeground(t.Styles.HelpTextForeground, defaultParam.Description))
 	}
 
 	if len(commandParams) > 0 {
@@ -159,7 +159,7 @@ func (t *Terminal) printHelp(command gt.Command) {
 	}
 
 	for i, param := range commandParams {
-		if i < len(commandFlags)-1 {
+		if i < len(commandParams)-1 {
 			prefix = fmt.Sprintf("      %v\n      %v%v ", vs, lc, hs)
 		} else {
 			prefix = fmt.Sprintf("      %v\n      %v%v ", vs, bl, hs)
