@@ -96,7 +96,13 @@ func ValidateParams(candidate gt.Command, inputParams []string) (map[string]inte
 				if err != nil {
 					return nil, err
 				}
-				parsedParams[defaultParam.Name] = inputParams[i]
+
+				casted, err := CastParam(*defaultParam, inputParams[i])
+				if err != nil {
+					return nil, err
+				}
+
+				parsedParams[defaultParam.Name] = casted
 				checkedDefaultParam = true
 				continue
 			} else {
@@ -104,28 +110,18 @@ func ValidateParams(candidate gt.Command, inputParams []string) (map[string]inte
 			}
 		}
 		if param.Type == gt.None {
-			parsedParams[param.Name] = nil
+			parsedParams[param.Name] = false
 		} else {
 			if i+1 < len(inputParams) {
 				err := ValidateType(param, inputParams[i+1])
 				if err != nil {
 					return nil, err
 				}
-				if param.Type == gt.Number {
-					toInt, err := strconv.Atoi(inputParams[i+1])
-					if err != nil {
-						return nil, errors.New("error when casting the Numeric param to an Integer")
-					}
-					parsedParams[param.Name] = toInt
-				} else if param.Type == gt.FloatNumber {
-					toFloat, err := strconv.ParseFloat(inputParams[i+1], 64)
-					if err != nil {
-						return nil, errors.New("error when casting the Numeric param to a Float")
-					}
-					parsedParams[param.Name] = toFloat
-				} else {
-					parsedParams[param.Name] = inputParams[i+1]
+				casted, err := CastParam(param, inputParams[i+1])
+				if err != nil {
+					return nil, err
 				}
+				parsedParams[param.Name] = casted
 				i++
 			} else {
 				return nil, errors.New("missing value")
@@ -176,6 +172,24 @@ func getParamOrError(param string, params []gt.Param) (gt.Param, error) {
 		}
 	}
 	return gt.Param{}, fmt.Errorf("candidate not found")
+}
+
+func CastParam(param gt.Param, value string) (interface{}, error) {
+	if param.Type == gt.Number {
+		toInt, err := strconv.Atoi(value)
+		if err != nil {
+			return nil, errors.New("error when casting the Numeric param to an Integer")
+		}
+		return toInt, nil
+	} else if param.Type == gt.FloatNumber {
+		toFloat, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return nil, errors.New("error when casting the Numeric param to a Float")
+		}
+		return toFloat, nil
+	} else {
+		return value, nil
+	}
 }
 
 func ValidateType(param gt.Param, inputParam string) error {

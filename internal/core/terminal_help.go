@@ -116,8 +116,12 @@ func (t *Terminal) printHelp(command gt.Command) {
 		prefix = fmt.Sprintf("  %v\n  %v%v ", vs, lc, bl)
 	}
 
-	if len(defaultParam.Description) > 0 {
-		fmt.Printf("%v%v%v\n", prefix, gu.ColorizeForeground(t.Styles.HelpTitlesForeground, "DEFAULT PARAM  "), gu.ColorizeForeground(t.Styles.HelpTextForeground, defaultParam.Description))
+	if len(defaultParam.Description) > 0 || defaultParam.Modifier&gt.REQUIRED != 0 {
+		reqText := ""
+		if defaultParam.Modifier&gt.REQUIRED != 0 {
+			reqText = gu.ColorizeForeground(t.Styles.HelpRequiredForeground, "(REQUIRED) ")
+		}
+		fmt.Printf("%v%v%v%v\n", prefix, gu.ColorizeForeground(t.Styles.HelpTitlesForeground, "DEFAULT PARAM  "), reqText, gu.ColorizeForeground(t.Styles.HelpTextForeground, defaultParam.Description))
 	}
 
 	if len(commandParams) > 0 {

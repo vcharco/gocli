@@ -100,12 +100,14 @@ func (t *Terminal) Get(data ...string) TerminalResponse {
 			// Validate command
 			command, params, err := gv.ValidateCommand(t.Commands, userInput)
 
+			// Log command in the history
+			t.commandHistory.append(userInput)
+
 			if err != nil {
 				return getTerminalResponse("", map[string]interface{}{}, userInput, ParamError, 0, err, oldState)
 			}
 
-			// Log in history, format line and return
-			t.commandHistory.append(userInput)
+			// Format line and return
 			re := regexp.MustCompile(`^\S+`)
 			t.replaceLine(&userInput, re.ReplaceAllString(userInput, command.Name))
 
