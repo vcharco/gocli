@@ -10,26 +10,6 @@ import (
 	gu "github.com/vcharco/gocli/internal/utils"
 )
 
-func (t *Terminal) printAutocompleteSuggestions(userInput string) {
-	t.cleanNextLineAndStay()
-	fmt.Print(t.Styles.ForegroundSuggestions)
-	fmt.Print(strings.Join(t.filterCommands(userInput), "  "))
-	fmt.Print("\033[K")
-	fmt.Print("\033[1A")
-	t.moveCursorToPos(t.cursorPos)
-}
-
-func (t *Terminal) filterCommands(prefix string) []string {
-	var result []string
-	gt.SortCommands(t.Commands)
-	for _, candidate := range t.Commands {
-		if strings.HasPrefix(candidate.Name, prefix) && candidate.Name != prefix && !candidate.Hidden {
-			result = append(result, candidate.Name)
-		}
-	}
-	return result
-}
-
 func (t *Terminal) printHelp(command gt.Command) {
 
 	gt.SortParams(command.Params)

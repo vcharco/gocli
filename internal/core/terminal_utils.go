@@ -5,28 +5,34 @@ import (
 )
 
 func (t *Terminal) replaceLine(userInput *string, text string) {
-	t.cleanLine()
+	t.CleanCurrentLine()
 	fmt.Print(text)
 	t.moveCursorToPos(len(text))
 	t.cursorPos = len(text)
 	*userInput = text
 }
 
-func (t *Terminal) cleanLine() {
+func (t *Terminal) CleanCurrentLine() {
 	t.moveCursorToPos(0)
 	fmt.Print("\033[K")
-}
-
-func (t *Terminal) cleanNextLine() {
-	t.cleanNextLineAndStay()
-	fmt.Print("\033[1A")
-	t.moveCursorToPos(t.cursorPos)
 }
 
 func (t *Terminal) cleanNextLineAndStay() {
 	fmt.Println()
 	fmt.Printf("\033[%dG", 1)
 	fmt.Print("\033[K")
+}
+
+func (t *Terminal) CleanNextLines(lines int) {
+	for i := 0; i < lines; i++ {
+		fmt.Println()
+		fmt.Printf("\033[%dG", 1)
+		fmt.Print("\033[K")
+	}
+	for i := 0; i < lines; i++ {
+		fmt.Print("\033[1A")
+	}
+	t.moveCursorToPos(t.cursorPos)
 }
 
 func (t *Terminal) moveCursorToPos(pos int) {
