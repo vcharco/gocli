@@ -29,7 +29,9 @@ func main() {
       {Name: "-f", Description: "foo flag"},
       // We set types for param validation (Ej: --foo foobar, --limit 20, -l 20)
       {Name: "--foo", Type: gc.Text},
-      // This is how we specify a default value and set it to required
+      // This is a required numeric param (int). Check complete type list in a section below
+      {Name: "--num", Type: gc.Number, Modifier: gc.REQUIRED},
+      // This is how we specify a default value (max 1) and set it to required
       {Name: "fooDefault", Type: gc.Number, Modifier: gc.DEFAULT | gc.REQUIRED},
     }},
     // This is how we set a hidden command. This is a valid command with autcompletion
@@ -93,7 +95,10 @@ cli := gc.Terminal {
 Here it's an example of how to use the response received.
 
 ```go
-// First we check the response is a valid command
+// First, we get the user input
+response := cli.Get()
+
+// Second, we check the response is a valid command
 if response.Type == gc.Cmd {
   // Now we check what command was typed by the user
   switch response.Command {
@@ -105,6 +110,9 @@ if response.Type == gc.Cmd {
       // For flag params, default value must be a boolean. Normally set to false
       fVal := response.GetParam("-f", false).(bool)
 
+      // For numeric (Number or FloatNumber) we cast to int or float
+      numVal := response.GetParam("--num", 0).(int)
+
       fmt.Printf("default: %v; -f: %v; --foo: %v\n", fooDefault, fVal, fooVal)
   }
 }
@@ -112,10 +120,10 @@ if response.Type == gc.Cmd {
 
 ### Command history
 
-The cli has a defautl command history. We use the UP/DOWN arrow keys to get the previuos command or the next command in the history as in any other cli.
+The cli has a default command history. We use the UP/DOWN arrow keys to get the previuos command or the next command in the history as in any other cli.
 
 ```go
-// This is how we print the history
+// This is how we print the history (20 last commands)
 cli.PrintHistory(20)
 
 // This is how we clear the history
@@ -124,7 +132,7 @@ cli.ClearHistory()
 // This is how we get the number of commands in the history
 numCmds := cli.CountHistory()
 
-// This is how we get all commands in history
+// This is how we get all commands in history ([]string)
 historyCommands := cli.GetHistory()
 
 // This is how we get an specific command in history
