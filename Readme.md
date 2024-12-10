@@ -184,9 +184,18 @@ if response.Type == gc.CtrlKey {
 
 ### Commands bypassed to the OS
 
-Commands with response type `OsCmd` were executed by the console of the operative system. Normally, we don't need to do anything with this responses, as its main pupose is just execute a command by the OS console, but we still perform some actions. In this case, we only have the `RawInput` attribute available.
+Commands with response type `OsCmd` mean that were executed by the operative system's terminal. Normally, we just pass (continue if in a loop) when we receive this, as the main pupose is just to be executed by the underlaying OS terminal, but we still may perform some actions if needed. Just know that in this kind of responses, we only have the `RawInput` attribute available.
 
 ```go
+// First, configure what character will be used to bypass commands. Colon (':') is used by default.
+cli := gc.Terminal {
+  // ...
+  BypassCharacter:  ":",
+}
+
+// Get the response
+response := cli.Get()
+
 if response.Type == gc.OsCmd {
   userInput := response.RawInput
   fmt.Printf("Comman executed by the OS: %v\n", userInput)
