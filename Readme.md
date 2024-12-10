@@ -110,7 +110,7 @@ if response.Type == gc.Cmd {
       // For flag params, default value must be a boolean. Normally set to false
       fVal := response.GetParam("-f", false).(bool)
 
-      // For numeric (Number or FloatNumber) we cast to int or float
+      // For numeric (Number or FloatNumber) we cast to int or float64
       numVal := response.GetParam("--num", 0).(int)
 
       fmt.Printf("default: %v; -f: %v; --foo: %v\n", fooDefault, fVal, fooVal)
@@ -207,7 +207,7 @@ if response.Type == gc.OsCmd {
 ### Configuration
 
 - `Prompt`: This is the text at the beggining of the line.
-- `PromptColor`: Set the color of the prompt.
+- `Styles`: Customize the appearance of the cli.
 - `Commands`: This list of commands is used for autocompletion and suggestions. It contains a sublist of valid parameters for each command.
 - `BypassCharacter`: Gocli checks if the input starts with this character, and in that case, instead of processing it, it sends it directly to the operating system's console. This allows you to execute OS commands without leaving Gocli.
   - Example for BypassCharacter `:`: `Prompt> :ls -l`
@@ -270,7 +270,7 @@ There are several shortcuts listed down here to make more fluid your interaction
 - `CTRL+C`: Copy the selected text to the clipboard. If no text is selected, it copies the full line.
 - `CTRL+V`: Paste the clipboard.
 - `CTRL+L`: Clear the screen.
-- `CTRL+X`: Exit the program (safely)
+- `CTRL+X`: Exit the cli (safely)
 - `CTRL+A`: Move the cursor at the beginning of the line
 - `CTRL+E`: Move the cursor at the end of the line
 
