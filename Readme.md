@@ -72,11 +72,11 @@ styles := gc.TerminalStyles {
   SelForegroundColor:     gc.Blue,            // Color of the text when selected
   SelBackgroundColor:     gc.BgLightBlue,     // Color of the selection
   HelpTextForeground:     gu.LightGray        // Color of the help (?) text
-	HelpTitlesForeground:   gu.Blue             // Color of the title sections in the help
-	HelpCommandForeground:  gu.White            // Color of the command in the help display
-	HelpParamsForeground:   gu.Yellow           // Color of the params in the help display
-	HelpRequiredForeground: gu.Red              // Color of (REQUIRED) param flag in help
-	HelpLineColor:          gu.Blue             // Color of the line in the help display
+  HelpTitlesForeground:   gu.Blue             // Color of the title sections in the help
+  HelpCommandForeground:  gu.White            // Color of the command in the help display
+  HelpParamsForeground:   gu.Yellow           // Color of the params in the help display
+  HelpRequiredForeground: gu.Red              // Color of (REQUIRED) param flag in help
+  HelpLineColor:          gu.Blue             // Color of the line in the help display
 }
 
 // Finally, add this configuration to you Terminal object
