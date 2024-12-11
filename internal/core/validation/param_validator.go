@@ -110,7 +110,7 @@ func ValidateParams(candidate gt.Command, inputParams []string) (map[string]inte
 			}
 		}
 		if param.Type == gt.None {
-			parsedParams[param.Name] = false
+			parsedParams[param.Name] = true
 		} else {
 			if i+1 < len(inputParams) {
 				err := ValidateType(param, inputParams[i+1])
@@ -187,6 +187,8 @@ func CastParam(param gt.Param, value string) (interface{}, error) {
 			return nil, errors.New("error when casting the Numeric param to a Float")
 		}
 		return toFloat, nil
+	} else if param.Type == gt.None {
+		return true, nil
 	} else {
 		return value, nil
 	}
