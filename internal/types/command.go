@@ -3,10 +3,10 @@ package goclitypes
 import "sort"
 
 type Command struct {
-	Name        string
-	Description string
-	Hidden      bool
-	Params      []Param
+	Name              string
+	Description       string
+	Hidden            bool
+	Params            []Param
 }
 
 func SortCommands(candidates []Command) {

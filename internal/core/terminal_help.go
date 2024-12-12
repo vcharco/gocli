@@ -5,9 +5,9 @@ import (
 	"math"
 	"strings"
 
-	gv "github.com/vcharco/gocli/internal/core/validation"
 	gt "github.com/vcharco/gocli/internal/types"
 	gu "github.com/vcharco/gocli/internal/utils"
+	gv "github.com/vcharco/gocli/internal/validation"
 )
 
 func (t *Terminal) printHelp(command gt.Command) {

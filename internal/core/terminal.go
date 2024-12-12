@@ -8,9 +8,9 @@ import (
 	"strings"
 	"syscall"
 
-	gv "github.com/vcharco/gocli/internal/core/validation"
 	gt "github.com/vcharco/gocli/internal/types"
 	gu "github.com/vcharco/gocli/internal/utils"
+	gv "github.com/vcharco/gocli/internal/validation"
 	"golang.org/x/term"
 )
 
